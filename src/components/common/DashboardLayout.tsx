@@ -17,7 +17,9 @@ const DashboardClientLayout = ({ children }: ClientLayoutProps) => {
                 </div>
                 <div className="w-full h-screen overflow-y-auto">
                     <Header />
-                    {children}
+                    <div className="p-4 bg-gray-50 dark:bg-slate-950 min-h-screen w-full">
+                        {children}
+                    </div>
                 </div>
             </div>
         </div>

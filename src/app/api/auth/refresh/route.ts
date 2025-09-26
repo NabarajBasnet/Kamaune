@@ -4,7 +4,6 @@ import { AUTH_URLS } from "@/lib/urls/urls";
 export async function POST(request: NextRequest) {
   try {
     const refresh = request.cookies.get("refreshToken")?.value;
-    console.log("Refresh in refresh: ", refresh)
     if (!refresh) {
       return NextResponse.json(
         { message: "Missing refresh token" },
@@ -21,7 +20,6 @@ export async function POST(request: NextRequest) {
     const data = await upstream.json().catch(() => ({}));
 
     if (!upstream.ok) {
-      // Clear cookies if refresh is invalid
       const res = NextResponse.json(
         { message: data?.message || "Refresh failed" },
         { status: 401 }
@@ -40,7 +38,6 @@ export async function POST(request: NextRequest) {
     }
 
     const newAccess = data?.data?.tokens?.access || data?.access;
-    console.log('New Access: ', newAccess)
     if (!newAccess) {
       return NextResponse.json(
         { message: "Invalid refresh response" },
