@@ -6,8 +6,8 @@ const nextConfig = {
         source: "/api/:path*",
         destination:
           process.env.NODE_ENV === "development"
-            ? "http://localhost:4000/api/:path*"
-            : "https://trainlink.com/api/:path*",
+            ? "http://localhost:3000/api/:path*"
+            : "https://api.nepcash.com/api/:path*",
       },
     ];
   },

@@ -15,14 +15,13 @@ const Products = () => {
         queryFn: () => GetAllProducts()
     })
 
-    console.log(data)
-
     return (
         <div className='space-y-4'>
             <StatCardSection
                 products={data?.data?.results}
                 showStats={true}
             />
+
             {/* <ProductActionSection /> */}
             {/* <SearchAndFilter /> */}
 
