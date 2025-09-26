@@ -18,10 +18,10 @@ export async function GET(_req: NextRequest) {
         }
 
         const data = await response.json();
-        
+
         // Create response with updated cookies if token was refreshed
         const res = NextResponse.json(data, { status: response.status });
-        
+
         if (newAccessToken) {
             res.cookies.set("accessToken", newAccessToken, {
                 httpOnly: true,
