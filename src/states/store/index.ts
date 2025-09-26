@@ -1,4 +1,3 @@
-// store/index.ts
 import { configureStore } from "@reduxjs/toolkit";
 import mainReducer from "./slicer";
 import authReducer from "./authSlice";
