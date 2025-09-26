@@ -1,40 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { PRODUCT_URLS } from "@/lib/urls/urls";
+import { makeAuthenticatedRequest } from "@/lib/auth-utils";
 
 export async function GET(_req: NextRequest) {
     try {
-        const cookieStore = await cookies();
-        const accessToken = cookieStore.get("accessToken")?.value;
-        const refreshToken = cookieStore.get("refreshToken")?.value;
+        const { response, newAccessToken } = await makeAuthenticatedRequest(
+            PRODUCT_URLS.GET_ALL,
+            { cache: "no-store" }
+        );
 
-        if (!accessToken) {
+        if (!response.ok) {
             return NextResponse.json(
-                { message: "No access token" },
-                { status: 401 }
+                { message: "Failed to fetch products" },
+                { status: response.status }
             );
         }
 
-        const upstream = await fetch(PRODUCT_URLS.GET_ALL, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`,
-            },
-            cache: "no-store",
-        });
+        const data = await response.json();
+        
+        // Create response with updated cookies if token was refreshed
+        const res = NextResponse.json(data, { status: response.status });
+        
+        if (newAccessToken) {
+            res.cookies.set("accessToken", newAccessToken, {
+                httpOnly: true,
+                secure: true,
+                sameSite: "lax",
+                path: "/",
+                maxAge: 15 * 60,
+            });
+        }
 
-        if (!upstream.ok) {
-            NextResponse.json(
-                { message: "Internal server error" },
-                { status: 500 }
-            )
-        };
-
-        const data = await upstream.json();
-
-        return NextResponse.json(data, { status: upstream.status });
+        return res;
     } catch (error: unknown) {
+        console.error("Products API error:", error);
         if (error instanceof Error) {
             return NextResponse.json(
                 { message: error.message || "Unexpected error" },
