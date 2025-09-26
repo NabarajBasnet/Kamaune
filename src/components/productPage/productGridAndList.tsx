@@ -120,15 +120,15 @@ function ProductsGridList({
                     </div>
 
                     <div className="flex justify-between items-center mt-4">
-                        <button className="px-3 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-1 transition-colors">
+                        <button className="px-3 py-3 text-xs rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-1 transition-colors">
                             <Copy className="h-3 w-3" />
                             Copy Link
                         </button>
                         <div className="flex gap-1">
-                            <button className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors">
+                            <button className="p-4 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors">
                                 <Edit3 className="h-4 w-4" />
                             </button>
-                            <button className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-colors">
+                            <button className="p-4 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-colors">
                                 <Trash2 className="h-4 w-4" />
                             </button>
                         </div>
@@ -220,7 +220,7 @@ function ProductsGridList({
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
-                        <button className="px-3 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-1 transition-colors">
+                        <button className="px-3 py-3 text-xs rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-1 transition-colors">
                             <Copy className="h-3 w-3" />
                             Copy Link
                         </button>

@@ -2,12 +2,12 @@
 
 import SearchAndFilter from '@/components/common/SearchAndFilter'
 import ProductActionSection from '@/components/productPage/actionSection'
-import OverviewSection from '@/components/productPage/overviewSection'
 import ProductsTab from '@/components/productPage/productGridAndList'
 import { GetAllProducts } from '@/services/products/product.service'
 import { useQuery } from '@tanstack/react-query'
 import React from 'react'
 import ProductsGridList from '@/components/productPage/productGridAndList';
+import StatCardSection from '@/components/productPage/statCardSection';
 
 const Products = () => {
     const { data, isLoading } = useQuery({
@@ -15,9 +15,14 @@ const Products = () => {
         queryFn: () => GetAllProducts()
     })
 
+    console.log(data)
+
     return (
-        <div className=''>
-            {/* <OverviewSection /> */}
+        <div className='space-y-4'>
+            <StatCardSection
+                products={data?.data?.results}
+                showStats={true}
+            />
             {/* <ProductActionSection /> */}
             {/* <SearchAndFilter /> */}
 
