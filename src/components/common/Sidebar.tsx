@@ -140,7 +140,7 @@ const Sidebar = () => {
                         <button
                             onClick={logout}
                             className={`
-                                group flex items-center 
+                                group flex cursor-pointer items-center 
                                 ${clientSidebar ? 'justify-center p-3' : 'p-3 gap-3 w-full'} 
                                 rounded-lg transition-all duration-200
                                 text-gray-600 dark:text-gray-300
