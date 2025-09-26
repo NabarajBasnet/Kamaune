@@ -12,8 +12,6 @@ const initialState: AuthState = {
   refreshToken: null,
 };
 
-console.log("Initial state: ", initialState);
-
 const authSlice = createSlice({
   name: "auth",
   initialState,

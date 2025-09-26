@@ -6,3 +6,7 @@ export const AUTH_URLS = {
   REFRESH: `${BASE_URL}/auth/token/refresh/`,
   LOG_OUT: `${BASE_URL}/auth/logout/`,
 };
+
+export const PRODUCT_URLS = {
+  GET_ALL: `${BASE_URL}/store/products`
+}
