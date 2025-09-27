@@ -1,8 +1,8 @@
-import { PRODUCT_URLS } from "@/lib/urls/urls";
+import { CATEGORIES_URLS } from "@/lib/urls/urls";
 import { makeAuthenticatedApiRequest } from "@/lib/auth-utils";
 
 export async function GET() {
-    return await makeAuthenticatedApiRequest(PRODUCT_URLS.GET_ALL, {
+    return await makeAuthenticatedApiRequest(CATEGORIES_URLS.GET_ALL, {
         method: "GET",
     });
 }

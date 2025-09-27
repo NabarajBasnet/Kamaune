@@ -1,13 +1,12 @@
 'use client';
 
-import SearchAndFilter from '@/components/common/SearchAndFilter'
 import ProductActionSection from '@/components/productPage/actionSection'
-import ProductsTab from '@/components/productPage/productGridAndList'
 import { GetAllProducts } from '@/services/products/product.service'
 import { useQuery } from '@tanstack/react-query'
 import React from 'react'
 import ProductsGridList from '@/components/productPage/productGridAndList';
 import StatCardSection from '@/components/productPage/statCardSection';
+import ProductFilterSection from '@/components/productPage/productFilterSection';
 
 const Products = () => {
     const { data, isLoading } = useQuery({
@@ -23,7 +22,8 @@ const Products = () => {
             />
 
             <ProductActionSection />
-            {/* <SearchAndFilter /> */}
+
+            <ProductFilterSection data={data?.data?.results} />
 
             <ProductsGridList
                 products={data?.data?.results || []}
@@ -34,4 +34,4 @@ const Products = () => {
     )
 }
 
-export default Products
+export default Products;

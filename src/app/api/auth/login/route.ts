@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AUTH_URLS } from "@/lib/urls/urls";
+import { setAccessTokenCookie } from "@/lib/auth-utils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,14 +38,8 @@ export async function POST(request: NextRequest) {
     });
 
     // Set httpOnly cookies
-    res.cookies.set("accessToken", access, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 15 * 60,
-    });
-
+    setAccessTokenCookie(res, access);
+    
     res.cookies.set("refreshToken", refresh, {
       httpOnly: true,
       secure: true,

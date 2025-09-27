@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AUTH_URLS } from "@/lib/urls/urls";
+import { setAccessTokenCookie, clearAuthCookies } from "@/lib/auth-utils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,16 +25,7 @@ export async function POST(request: NextRequest) {
         { message: data?.message || "Refresh failed" },
         { status: 401 }
       );
-      res.cookies.set("accessToken", "", {
-        httpOnly: true,
-        path: "/",
-        maxAge: 0,
-      });
-      res.cookies.set("refreshToken", "", {
-        httpOnly: true,
-        path: "/",
-        maxAge: 0,
-      });
+      clearAuthCookies(res);
       return res;
     }
 
@@ -46,13 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     const res = NextResponse.json({ message: "ok" });
-    res.cookies.set("accessToken", newAccess, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 15 * 60,
-    });
+    setAccessTokenCookie(res, newAccess);
     return res;
   } catch (e: any) {
     return NextResponse.json(
