@@ -15,3 +15,11 @@ export const CATEGORIES_URLS = {
   GET_ALL: `${BASE_URL}/store/category`,
   GET_ALL_SUBCATEGORIES: `${BASE_URL}/store/subcategory`,
 }
+
+export const MERCHANTS_URLS = {
+  GET_ALL: `${BASE_URL}/store/merchants`
+}
+
+export const BRANDS_URLS = {
+  GET_ALL: `${BASE_URL}/store/brands`
+}

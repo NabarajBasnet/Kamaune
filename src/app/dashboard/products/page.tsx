@@ -1,7 +1,7 @@
 'use client';
 
 import ProductActionSection from '@/components/productPage/actionSection'
-import { GetAllProducts } from '@/services/products/product.service'
+import { GetAllProducts } from '@/services/store/products/product.service'
 import { useQuery } from '@tanstack/react-query'
 import React from 'react'
 import ProductsGridList from '@/components/productPage/productGridAndList';

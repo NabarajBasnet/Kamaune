@@ -79,7 +79,8 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     const clearAll = (e: React.MouseEvent) => {
         e.stopPropagation();
         setSelectedOptions([]);
-        onSelect([]);
+        onSelect(isMulti ? [] : (options[0] || { value: '', label: '' }));
+        setSearchTerm('');
     };
 
     const getDisplayText = () => {
@@ -90,6 +91,9 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         }
         return selectedOptions[0]?.label || placeholder;
     };
+
+    // Check if there are any selected options to show the clear button
+    const hasSelectedOptions = selectedOptions.length > 0;
 
     return (
         <div
@@ -156,6 +160,21 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                                 Clear
                             </button>
                         )}
+
+                        {/* Cross icon to clear selection */}
+                        {hasSelectedOptions && !isMulti && (
+                            <button
+                                type="button"
+                                onClick={clearAll}
+                                className="cursor-pointer text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                                title="Clear selection"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        )}
+
                         <svg
                             className={`w-5 h-5 text-gray-400 dark:text-gray-500 transition-all duration-300 ${isOpen ? 'rotate-180 text-blue-500 dark:text-blue-400' : ''
                                 }`}
