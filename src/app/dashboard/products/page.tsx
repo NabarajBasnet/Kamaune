@@ -22,7 +22,7 @@ const Products = () => {
                 showStats={true}
             />
 
-            {/* <ProductActionSection /> */}
+            <ProductActionSection />
             {/* <SearchAndFilter /> */}
 
             <ProductsGridList
