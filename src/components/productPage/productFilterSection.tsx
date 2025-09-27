@@ -5,6 +5,7 @@ import { getAllCategories, getAllSubCategories } from "@/services/store/products
 import { useEffect, useState } from "react";
 import { getAllMerchants } from "@/services/store/merchants/merchants.service";
 import { getAllBrands } from "@/services/store/brands/brands.service";
+import SearchField from "../common/SearchField";
 
 interface ProductsProps {
     data: Product[];
@@ -13,12 +14,17 @@ interface ProductsProps {
     error?: string | null;
 }
 
-const ProductFilterSection = ({ data }: ProductsProps) => {
+const ProductFilterSection = ({
+    data,
+    hasSearchField
+}: { data: ProductsProps[]; hasSearchField?: boolean }) => {
 
     const [selectedCategory, setSelectedCategory] = useState<string>("");
     const [selectedSubCategory, setSelectedSubCategory] = useState<string>("");
     const [selectedMerchant, setSelectedMerchant] = useState<string>("");
     const [selectedBrand, setSelectedBrand] = useState<string>("");
+    const [selectedStatus, setSelectedStatus] = useState<string>("");
+    const [searchQuery, setSearchQuery] = useState<string>("");
 
     // Handle mounting state
     const [mount, setMount] = useState(false);
@@ -89,39 +95,68 @@ const ProductFilterSection = ({ data }: ProductsProps) => {
         setSelectedBrand(selected.value);
     };
 
+    // Status options
+    const status = [
+        { name: 'Active', value: 'active' },
+        { name: 'Inactive', value: 'inactive' },
+        { name: 'Pending', value: 'pending' },
+    ];
+    const statusOptions = status.map((stat: any) => ({
+        value: stat.value,
+        label: stat.name,
+    })) ?? [];
+
+    const handleStatusSelect = (selected: { value: string; label: string }) => {
+        setSelectedStatus(selected.value);
+    };
+
     return (
-        <div className="grid grid-cols-1 md:gri-cols-4 lg:grid-cols-5">
-            {/* Categories selector */}
-            <SearchableDropdown
-                options={categoryOptions}
-                onSelect={handleCategorySelect}
-                placeholder={isLoading ? "Loading categories..." : "All Categories"}
-                className="w-52"
-            />
+        <div className="w-full space-y-4">
+            <div className="grid grid-cols-1 md:gri-cols-4 lg:grid-cols-5">
+                {/* Categories selector */}
+                <SearchableDropdown
+                    options={categoryOptions}
+                    onSelect={handleCategorySelect}
+                    placeholder={isLoading ? "Loading categories..." : "All Categories"}
+                    className="w-52"
+                />
 
-            {/* Sub categories selector */}
-            <SearchableDropdown
-                options={subCategoryOptions}
-                onSelect={handleSubCategorySelect}
-                placeholder={isLoading ? "Loading sub categories..." : "All Sub Categories"}
-                className="w-52"
-            />
+                {/* Sub categories selector */}
+                <SearchableDropdown
+                    options={subCategoryOptions}
+                    onSelect={handleSubCategorySelect}
+                    placeholder={isLoading ? "Loading sub categories..." : "All Sub Categories"}
+                    className="w-52"
+                />
 
-            {/* Merchant selector */}
-            <SearchableDropdown
-                options={merchantsOptions}
-                onSelect={handleMerchantSelect}
-                placeholder={isLoading ? "Loading merchants..." : "All Merchants"}
-                className="w-52"
-            />
+                {/* Merchant selector */}
+                <SearchableDropdown
+                    options={merchantsOptions}
+                    onSelect={handleMerchantSelect}
+                    placeholder={isLoading ? "Loading merchants..." : "All Merchants"}
+                    className="w-52"
+                />
 
-            {/* Brand selector */}
-            <SearchableDropdown
-                options={barndsOptions}
-                onSelect={handleBrandSelect}
-                placeholder={isLoading ? "Loading brands..." : "All Brands"}
-                className="w-52"
-            />
+                {/* Brand selector */}
+                <SearchableDropdown
+                    options={barndsOptions}
+                    onSelect={handleBrandSelect}
+                    placeholder={isLoading ? "Loading brands..." : "All Brands"}
+                    className="w-52"
+                />
+
+                {/* Status selector */}
+                <SearchableDropdown
+                    options={statusOptions}
+                    onSelect={handleStatusSelect}
+                    placeholder={isLoading ? "Loading Status..." : "All Status"}
+                    className="w-52"
+                />
+            </div>
+
+            {hasSearchField && (
+                <SearchField onSearch={(q) => console.log("Search:", q)} />
+            )}
         </div>
     );
 };

@@ -23,7 +23,7 @@ const Products = () => {
 
             <ProductActionSection />
 
-            <ProductFilterSection data={data?.data?.results} />
+            <ProductFilterSection data={data?.data?.results} hasSearchField={true} />
 
             <ProductsGridList
                 products={data?.data?.results || []}
