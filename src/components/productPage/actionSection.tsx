@@ -3,7 +3,7 @@ import { Button } from "../ui/button";
 import { RefreshCcw, Box, Plus } from "lucide-react";
 import { CiExport, CiImport } from "react-icons/ci";
 
-function ProductActionSection() {
+function ProductActionSection({ isOpen, toggleOpen }) {
     return (
         <div className="w-full flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             {/* Left side actions */}
@@ -43,6 +43,7 @@ function ProductActionSection() {
 
             {/* Right side */}
             <Button
+                onClick={() => toggleOpen(true)}
                 variant="outline"
                 className="flex items-center gap-2 shadow-sm md:self-auto w-full md:w-auto py-5.5 cursor-pointer"
             >

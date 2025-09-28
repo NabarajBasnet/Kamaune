@@ -3,12 +3,16 @@
 import ProductActionSection from '@/components/productPage/actionSection'
 import { GetAllProducts } from '@/services/store/products/product.service'
 import { useQuery } from '@tanstack/react-query'
-import React from 'react'
+import React, { useState } from 'react'
 import ProductsGridList from '@/components/productPage/productGridAndList';
 import StatCardSection from '@/components/productPage/statCardSection';
 import ProductFilterSection from '@/components/productPage/productFilterSection';
+import ProductAddForm from '@/components/productPage/productAddForm';
 
 const Products = () => {
+    const [productFormOpen, setProductFormOpen] = useState<boolean>(false);
+    console.log(productFormOpen)
+
     const { data, isLoading } = useQuery({
         queryKey: ['products'],
         queryFn: () => GetAllProducts()
@@ -21,8 +25,9 @@ const Products = () => {
                 showStats={true}
             />
 
-            <ProductActionSection />
+            <ProductActionSection isOpen={productFormOpen} toggleOpen={setProductFormOpen} />
 
+            <ProductAddForm isOpen={productFormOpen} toggleOpen={setProductFormOpen} />
             <ProductFilterSection data={data?.data?.results} hasSearchField={true} />
 
             <ProductsGridList
