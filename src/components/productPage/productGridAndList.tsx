@@ -1,6 +1,20 @@
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import React, { useState } from 'react';
 import { Grid, List, Copy, Edit3, Trash2 } from 'lucide-react';
 import { Product } from '@/types/products';
+import { deleteProduct } from "@/services/store/products/product.service";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface ProductsGridListProps {
     products: Product[];
@@ -13,7 +27,25 @@ function ProductsGridList({
     products,
     count,
 }: ProductsGridListProps) {
+    const queryClient = useQueryClient();
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [isWarningOpen, setIsWarningOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleProductDelete = async (slug: string) => {
+        try {
+            setIsLoading(true);
+            await deleteProduct(slug);
+            toast.success('Product deleted successfully');
+            queryClient.invalidateQueries({ queryKey: ['products'] });
+        } catch (error) {
+            console.error("Failed to delete product:", error);
+            toast.error('Failed to delete product');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     // Handle case when products is undefined or null
     if (!products) {
@@ -128,9 +160,47 @@ function ProductsGridList({
                             <button className="p-4 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors">
                                 <Edit3 className="h-4 w-4" />
                             </button>
-                            <button className="p-4 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-colors">
-                                <Trash2 className="h-4 w-4" />
-                            </button>
+
+                            {/* <DeleteDialog
+                                isOpen={isDeleteOpen}
+                                onClose={() => setIsDeleteOpen(false)}
+                                onConfirm={handleArchive}
+                                title="Archive Item"
+                                description="This item will be moved to archive. You can restore it later if needed."
+                                confirmText="Archive"
+                                cancelText="Keep Active"
+                                isLoading={isLoading}
+                                variant="warning"
+                            /> */}
+
+                            {/* Delete dialog */}
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <button
+                                        className="p-4 cursor-pointer rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-colors">
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This action cannot be undone. This will permanently delete your
+                                            account and remove your data from our servers.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={() => handleProductDelete(product.slug)}
+                                            className="bg-red-600 cursor-pointer hover:bg-red-500 dark:text-white"
+                                            disabled={isLoading}
+                                        >
+                                            {isLoading ? "Deleting..." : "Continue"}
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </div>
                     </div>
                 </div>
@@ -227,9 +297,35 @@ function ProductsGridList({
                         <button className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors">
                             <Edit3 className="h-4 w-4" />
                         </button>
-                        <button className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-colors">
-                            <Trash2 className="h-4 w-4" />
-                        </button>
+
+                        {/* Delete dialog */}
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <button
+                                    className="p-4 rounded cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-colors">
+                                    <Trash2 className="h-4 w-4" />
+                                </button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete your
+                                        account and remove your data from our servers.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                        onClick={() => handleProductDelete(product.slug)}
+                                        className="bg-red-600 cursor-pointer hover:bg-red-500 dark:text-white"
+                                        disabled={isLoading}
+                                    >
+                                        {isLoading ? "Deleting..." : "Continue"}
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 </div>
             </div>

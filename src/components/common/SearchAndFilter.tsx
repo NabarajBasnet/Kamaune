@@ -116,9 +116,6 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         `}
                 onClick={() => !disabled && setIsOpen(!isOpen)}
             >
-                {/* Subtle gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/20 to-purple-50/20 dark:from-blue-900/10 dark:to-purple-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
                 <div className="flex justify-between items-center relative z-10">
                     <div className="flex flex-wrap gap-2 flex-1 min-h-[24px]">
                         {isMulti ? (
@@ -190,7 +187,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
 
             {/* Dropdown Menu */}
             {isOpen && !disabled && (
-                <div className="absolute z-50 w-full mt-2 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-xl shadow-2xl shadow-black/10 dark:shadow-black/30 max-h-72 overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                <div className="absolute z-50 w-full mt-2 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-xl shadow-2xl shadow-black/10 dark:shadow-black/30 max-h-72 overflow-hidden">
                     {/* Search Input */}
                     <div className="p-4 border-b border-gray-100 dark:border-gray-800">
                         <div className="relative">
@@ -209,7 +206,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                     </div>
 
                     {/* Options List */}
-                    <div className="py-2 overflow-auto max-h-52 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+                    <div className="py-2 overflow-auto max-h-52">
                         {filteredOptions.length > 0 ? (
                             filteredOptions.map(option => {
                                 const isSelected = selectedOptions.some(item => item.value === option.value);
