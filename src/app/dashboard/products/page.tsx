@@ -25,9 +25,7 @@ const Products = () => {
                 showStats={true}
             />
 
-            <ProductActionSection isOpen={productFormOpen} toggleOpen={setProductFormOpen} />
-
-            <ProductAddForm isOpen={productFormOpen} toggleOpen={setProductFormOpen} />
+            <ProductActionSection />
             <ProductFilterSection data={data?.data?.results} hasSearchField={true} />
 
             <ProductsGridList

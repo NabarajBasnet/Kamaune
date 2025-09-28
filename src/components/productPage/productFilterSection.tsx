@@ -117,7 +117,7 @@ const ProductFilterSection = ({
                 <SearchableDropdown
                     options={categoryOptions}
                     onSelect={handleCategorySelect}
-                    placeholder={isLoading ? "Loading categories..." : "All Categories"}
+                    placeholder={isLoading ? "Loading..." : "All Categories"}
                     className="w-52"
                 />
 
@@ -125,7 +125,7 @@ const ProductFilterSection = ({
                 <SearchableDropdown
                     options={subCategoryOptions}
                     onSelect={handleSubCategorySelect}
-                    placeholder={isLoading ? "Loading sub categories..." : "All Sub Categories"}
+                    placeholder={isLoading ? "Loading..." : "All Sub Categories"}
                     className="w-52"
                 />
 
@@ -133,7 +133,7 @@ const ProductFilterSection = ({
                 <SearchableDropdown
                     options={merchantsOptions}
                     onSelect={handleMerchantSelect}
-                    placeholder={isLoading ? "Loading merchants..." : "All Merchants"}
+                    placeholder={isLoading ? "Loading..." : "All Merchants"}
                     className="w-52"
                 />
 
@@ -141,7 +141,7 @@ const ProductFilterSection = ({
                 <SearchableDropdown
                     options={barndsOptions}
                     onSelect={handleBrandSelect}
-                    placeholder={isLoading ? "Loading brands..." : "All Brands"}
+                    placeholder={isLoading ? "Loading..." : "All Brands"}
                     className="w-52"
                 />
 
@@ -149,7 +149,7 @@ const ProductFilterSection = ({
                 <SearchableDropdown
                     options={statusOptions}
                     onSelect={handleStatusSelect}
-                    placeholder={isLoading ? "Loading Status..." : "All Status"}
+                    placeholder={isLoading ? "Loading..." : "All Status"}
                     className="w-52"
                 />
             </div>

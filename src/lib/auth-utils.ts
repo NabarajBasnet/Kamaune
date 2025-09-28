@@ -105,6 +105,8 @@ export async function makeAuthenticatedApiRequest(
                 path: "/",
                 maxAge: 15 * 60,
             });
+        } else {
+            console.log("No new access token to set in cookies");
         }
 
         return nextResponse;
@@ -123,7 +125,7 @@ export async function makeAuthenticatedApiRequest(
 export function setAccessTokenCookie(response: NextResponse, accessToken: string): void {
     response.cookies.set("accessToken", accessToken, {
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
         maxAge: 15 * 60,

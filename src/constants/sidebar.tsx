@@ -50,7 +50,7 @@ export const menuItems = [
         subItems: [
             {
                 label: "All Products",
-                path: "/dashboard/products/all",
+                path: "/dashboard/products",
                 icon: <List className="text-sm" />,
                 description: "View all products"
             },
@@ -60,18 +60,18 @@ export const menuItems = [
                 icon: <Plus className="text-sm" />,
                 description: "Create new product"
             },
-            {
-                label: "Categories",
-                path: "/dashboard/products/categories",
-                icon: <Tags className="text-sm" />,
-                description: "Manage product categories"
-            },
-            {
-                label: "Inventory",
-                path: "/dashboard/products/inventory",
-                icon: <Package className="text-sm" />,
-                description: "Track product inventory"
-            }
+            // {
+            //     label: "Categories",
+            //     path: "/dashboard/products/categories",
+            //     icon: <Tags className="text-sm" />,
+            //     description: "Manage product categories"
+            // },
+            // {
+            //     label: "Inventory",
+            //     path: "/dashboard/products/inventory",
+            //     icon: <Package className="text-sm" />,
+            //     description: "Track product inventory"
+            // }
         ]
     },
     {
