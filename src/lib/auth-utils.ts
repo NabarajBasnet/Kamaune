@@ -84,7 +84,6 @@ export async function makeAuthenticatedApiRequest(
 ): Promise<NextResponse> {
     try {
         const { response, newAccessToken } = await makeAuthenticatedRequest(url, options);
-
         let data;
         try {
             data = await response.json();

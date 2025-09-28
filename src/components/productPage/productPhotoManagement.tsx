@@ -6,6 +6,7 @@ interface Photo {
     url: string;
     alt: string;
     isPrimary: boolean;
+    file?: File;
 }
 
 interface FormValues {
@@ -25,7 +26,7 @@ const ProductPhotoManagement = ({ onPhotosChange }: ProductPhotoManagementProps)
         getValues
     } = useForm<FormValues>({
         defaultValues: {
-            photos: [{ id: Date.now().toString(), url: "", alt: "", isPrimary: true }]
+            photos: []
         }
     });
 
@@ -40,6 +41,7 @@ const ProductPhotoManagement = ({ onPhotosChange }: ProductPhotoManagementProps)
 
     const watchPhotos = watch("photos");
     const currentPhotos = watchPhotos || [];
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     // Notify parent when photos change
     const notifyParent = () => {
@@ -49,18 +51,37 @@ const ProductPhotoManagement = ({ onPhotosChange }: ProductPhotoManagementProps)
         }
     };
 
-    const handleAddPhoto = () => {
-        if (currentPhotos.length < 5) {
-            append({
-                id: Date.now().toString(),
-                url: "",
-                alt: "",
-                isPrimary: currentPhotos.length === 0
-            }, {
-                shouldFocus: false
-            });
-            notifyParent();
+    // Handle file selection
+    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (!files) return;
+
+        const availableSlots = 5 - currentPhotos.length;
+        const filesToProcess = Array.from(files).slice(0, availableSlots);
+
+        if (filesToProcess.length === 0) return;
+
+        filesToProcess.forEach((file, index) => {
+            if (file.type.startsWith('image/')) {
+                const url = URL.createObjectURL(file);
+                const isFirstPhoto = currentPhotos.length === 0 && index === 0;
+
+                append({
+                    id: Date.now().toString() + index,
+                    url: url,
+                    alt: file.name.split('.')[0] || `Photo ${currentPhotos.length + index + 1}`,
+                    isPrimary: isFirstPhoto,
+                    file: file
+                });
+            }
+        });
+
+        // Reset file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
         }
+
+        notifyParent();
     };
 
     const handleSetPrimaryPhoto = (photoIndex: number) => {
@@ -71,7 +92,14 @@ const ProductPhotoManagement = ({ onPhotosChange }: ProductPhotoManagementProps)
     };
 
     const handleRemovePhoto = (index: number) => {
-        const wasPrimary = currentPhotos[index]?.isPrimary;
+        const photoToRemove = currentPhotos[index];
+
+        // Revoke the object URL to prevent memory leaks
+        if (photoToRemove?.url && photoToRemove.url.startsWith('blob:')) {
+            URL.revokeObjectURL(photoToRemove.url);
+        }
+
+        const wasPrimary = photoToRemove?.isPrimary;
 
         remove(index);
 
@@ -82,6 +110,17 @@ const ProductPhotoManagement = ({ onPhotosChange }: ProductPhotoManagementProps)
 
         notifyParent();
     };
+
+    // Clean up object URLs when component unmounts
+    React.useEffect(() => {
+        return () => {
+            currentPhotos.forEach(photo => {
+                if (photo?.url && photo.url.startsWith('blob:')) {
+                    URL.revokeObjectURL(photo.url);
+                }
+            });
+        };
+    }, []);
 
     React.useEffect(() => {
         const subscription = watch((value) => {
@@ -98,24 +137,33 @@ const ProductPhotoManagement = ({ onPhotosChange }: ProductPhotoManagementProps)
                 Product Photos (Up to 5)
             </h3>
 
+            <input
+                type="file"
+                ref={fileInputRef}
+                multiple
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+            />
+
             <div className="overflow-x-auto">
                 <table className="w-full">
                     <thead>
                         <tr className="border-b border-gray-300 dark:border-gray-600">
                             <th className="text-left py-3 px-2 text-sm font-medium text-gray-900 dark:text-white">
-                                #
+                                S.N
                             </th>
                             <th className="text-left py-3 px-2 text-sm font-medium text-gray-900 dark:text-white">
-                                Photo URL
+                                Preview
+                            </th>
+                            <th className="text-left py-3 px-2 text-sm font-medium text-gray-900 dark:text-white">
+                                File Name
                             </th>
                             <th className="text-left py-3 px-2 text-sm font-medium text-gray-900 dark:text-white">
                                 Alt Text
                             </th>
                             <th className="text-left py-3 px-2 text-sm font-medium text-gray-900 dark:text-white">
                                 Primary
-                            </th>
-                            <th className="text-left py-3 px-2 text-sm font-medium text-gray-900 dark:text-white">
-                                Preview
                             </th>
                             <th className="text-left py-3 px-2 text-sm font-medium text-gray-900 dark:text-white">
                                 Actions
@@ -132,31 +180,6 @@ const ProductPhotoManagement = ({ onPhotosChange }: ProductPhotoManagementProps)
                                     <span className="text-sm font-medium text-gray-900 dark:text-white">
                                         {index + 1}
                                     </span>
-                                </td>
-                                <td className="py-3 px-2">
-                                    <input
-                                        type="url"
-                                        {...register(`photos.${index}.url`)}
-                                        placeholder={`Photo ${index + 1} URL`}
-                                        className="w-full bg-white dark:bg-gray-700 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none border border-gray-300 dark:border-gray-600 placeholder:text-gray-500 dark:placeholder:text-gray-400"
-                                    />
-                                </td>
-                                <td className="py-3 px-2">
-                                    <input
-                                        type="text"
-                                        {...register(`photos.${index}.alt`)}
-                                        placeholder={`Alt text for photo ${index + 1}`}
-                                        className="w-full bg-white dark:bg-gray-700 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none border border-gray-300 dark:border-gray-600 placeholder:text-gray-500 dark:placeholder:text-gray-400"
-                                    />
-                                </td>
-                                <td className="py-3 px-2 text-center">
-                                    <input
-                                        type="radio"
-                                        checked={currentPhotos[index]?.isPrimary || false}
-                                        onChange={() => handleSetPrimaryPhoto(index)}
-                                        disabled={!currentPhotos[index]?.url}
-                                        className="w-4 h-4 text-emerald-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-emerald-500 disabled:opacity-50"
-                                    />
                                 </td>
                                 <td className="py-3 px-2">
                                     {currentPhotos[index]?.url ? (
@@ -179,15 +202,35 @@ const ProductPhotoManagement = ({ onPhotosChange }: ProductPhotoManagementProps)
                                     )}
                                 </td>
                                 <td className="py-3 px-2">
-                                    {currentPhotos[index]?.url && (
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemovePhoto(index)}
-                                            className="px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-300 dark:border-red-700 rounded-md"
-                                        >
-                                            Remove
-                                        </button>
-                                    )}
+                                    <span className="text-sm text-gray-900 dark:text-white">
+                                        {currentPhotos[index]?.file?.name || 'No file'}
+                                    </span>
+                                </td>
+                                <td className="py-3 px-2">
+                                    <input
+                                        type="text"
+                                        {...register(`photos.${index}.alt`)}
+                                        placeholder={`Alt text for photo ${index + 1}`}
+                                        className="w-full bg-white dark:bg-gray-700 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none border border-gray-300 dark:border-gray-600 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                                    />
+                                </td>
+                                <td className="py-3 px-2 text-center">
+                                    <input
+                                        type="radio"
+                                        checked={currentPhotos[index]?.isPrimary || false}
+                                        onChange={() => handleSetPrimaryPhoto(index)}
+                                        disabled={!currentPhotos[index]?.url}
+                                        className="w-4 h-4 text-emerald-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-emerald-500 disabled:opacity-50"
+                                    />
+                                </td>
+                                <td className="py-3 px-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemovePhoto(index)}
+                                        className="px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-300 dark:border-red-700 rounded-md"
+                                    >
+                                        Remove
+                                    </button>
                                 </td>
                             </tr>
                         ))}
@@ -198,20 +241,19 @@ const ProductPhotoManagement = ({ onPhotosChange }: ProductPhotoManagementProps)
             <div className="mt-4 flex justify-between items-center">
                 <button
                     type="button"
-                    onClick={handleAddPhoto}
+                    onClick={() => fileInputRef.current?.click()}
                     disabled={currentPhotos.length >= 5}
                     className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    Add Photo ({currentPhotos.length}/5)
+                    Upload Photos ({currentPhotos.length}/5)
                 </button>
             </div>
 
             <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
                 <p>• Upload up to 5 product photos</p>
-                <p>
-                    • Select one photo as primary (will be used as main product image)
-                </p>
+                <p>• Select one photo as primary (will be used as main product image)</p>
                 <p>• Alt text helps with accessibility and SEO</p>
+                <p>• Supported formats: JPEG, PNG, WebP, GIF</p>
             </div>
         </div>
     );

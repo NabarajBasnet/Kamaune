@@ -9,6 +9,7 @@ export const AUTH_URLS = {
 
 export const PRODUCT_URLS = {
   GET_ALL: `${BASE_URL}/store/products`,
+  CREATE_PRODUCT: `${BASE_URL}/store/products`,
   DELETE_PRODUCT: `${BASE_URL}/store/products`,
 }
 
