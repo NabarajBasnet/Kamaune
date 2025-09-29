@@ -112,13 +112,13 @@ const ProductFilterSection = ({
 
     return (
         <div className="w-full space-y-4">
-            <div className="grid grid-cols-1 md:gri-cols-4 lg:grid-cols-5">
+            <div className="grid grid-cols-1 md:gri-cols-4 gap-4 lg:grid-cols-5">
                 {/* Categories selector */}
                 <SearchableDropdown
                     options={categoryOptions}
                     onSelect={handleCategorySelect}
                     placeholder={isLoading ? "Loading..." : "All Categories"}
-                    className="w-52"
+                    className="w-full"
                 />
 
                 {/* Sub categories selector */}
@@ -126,7 +126,7 @@ const ProductFilterSection = ({
                     options={subCategoryOptions}
                     onSelect={handleSubCategorySelect}
                     placeholder={isLoading ? "Loading..." : "All Sub Categories"}
-                    className="w-52"
+                    className="w-full"
                 />
 
                 {/* Merchant selector */}
@@ -134,7 +134,7 @@ const ProductFilterSection = ({
                     options={merchantsOptions}
                     onSelect={handleMerchantSelect}
                     placeholder={isLoading ? "Loading..." : "All Merchants"}
-                    className="w-52"
+                    className="w-full"
                 />
 
                 {/* Brand selector */}
@@ -142,7 +142,7 @@ const ProductFilterSection = ({
                     options={barndsOptions}
                     onSelect={handleBrandSelect}
                     placeholder={isLoading ? "Loading..." : "All Brands"}
-                    className="w-52"
+                    className="w-full"
                 />
 
                 {/* Status selector */}
@@ -150,7 +150,7 @@ const ProductFilterSection = ({
                     options={statusOptions}
                     onSelect={handleStatusSelect}
                     placeholder={isLoading ? "Loading..." : "All Status"}
-                    className="w-52"
+                    className="w-full"
                 />
             </div>
 

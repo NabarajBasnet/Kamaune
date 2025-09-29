@@ -7,11 +7,8 @@ import React, { useState } from 'react'
 import ProductsGridList from '@/components/productPage/productGridAndList';
 import StatCardSection from '@/components/productPage/statCardSection';
 import ProductFilterSection from '@/components/productPage/productFilterSection';
-import ProductAddForm from '@/components/productPage/productAddForm';
 
 const Products = () => {
-    const [productFormOpen, setProductFormOpen] = useState<boolean>(false);
-    console.log(productFormOpen)
 
     const { data, isLoading } = useQuery({
         queryKey: ['products'],
