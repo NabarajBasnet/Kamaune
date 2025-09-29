@@ -1,12 +1,15 @@
-import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dashboard } from "@/components/dashboard/dashboard";
 
-export default function Dashboard() {
+export async function generateMetadate() {
+  return ({
+    title: "Dashboard Overview - Kamaune",
+    description: "Dashboard overview page"
+  })
 
+}
 
+export default function Page() {
   return (
-    <div className="w-full dark:bg-gray-950 min-h-screen p-4">
-      <h1>Dashboard page</h1>
-    </div>
+    <Dashboard />
   );
 }

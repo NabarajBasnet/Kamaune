@@ -32,7 +32,7 @@ import {
 export const menuItems = [
     {
         label: "Overview",
-        path: "/dashboard/overview",
+        path: "/dashboard/",
         icon: <Home className="text-lg" />,
         description: "General dashboard overview",
     },
