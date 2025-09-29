@@ -6,7 +6,7 @@ interface Photo {
     url: string;
     alt: string;
     isPrimary: boolean;
-    file?: File;
+    file: File;
 }
 
 interface FormValues {
@@ -43,7 +43,6 @@ const ProductPhotoManagement = ({ onPhotosChange }: ProductPhotoManagementProps)
     const currentPhotos = watchPhotos || [];
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-    // Notify parent when photos change
     const notifyParent = () => {
         if (onPhotosChange) {
             const formValues = getValues();
@@ -76,7 +75,6 @@ const ProductPhotoManagement = ({ onPhotosChange }: ProductPhotoManagementProps)
             }
         });
 
-        // Reset file input
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -94,7 +92,6 @@ const ProductPhotoManagement = ({ onPhotosChange }: ProductPhotoManagementProps)
     const handleRemovePhoto = (index: number) => {
         const photoToRemove = currentPhotos[index];
 
-        // Revoke the object URL to prevent memory leaks
         if (photoToRemove?.url && photoToRemove.url.startsWith('blob:')) {
             URL.revokeObjectURL(photoToRemove.url);
         }
@@ -111,7 +108,6 @@ const ProductPhotoManagement = ({ onPhotosChange }: ProductPhotoManagementProps)
         notifyParent();
     };
 
-    // Clean up object URLs when component unmounts
     React.useEffect(() => {
         return () => {
             currentPhotos.forEach(photo => {
@@ -123,13 +119,8 @@ const ProductPhotoManagement = ({ onPhotosChange }: ProductPhotoManagementProps)
     }, []);
 
     React.useEffect(() => {
-        const subscription = watch((value) => {
-            if (onPhotosChange && value.photos) {
-                onPhotosChange(value.photos);
-            }
-        });
-        return () => subscription.unsubscribe();
-    }, [watch, onPhotosChange]);
+        notifyParent();
+    }, []);
 
     return (
         <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-6 bg-gray-50 dark:bg-gray-700/50">

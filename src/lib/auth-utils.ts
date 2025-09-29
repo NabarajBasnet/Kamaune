@@ -80,22 +80,24 @@ export async function makeAuthenticatedRequest(
 
 export async function makeAuthenticatedApiRequest(
     url: string,
-    options: RequestInit = {}
-): Promise<NextResponse> {
+    options: RequestInit = {},
+    { raw = false } = {}
+): Promise<NextResponse | Response> {
     try {
         const { response, newAccessToken } = await makeAuthenticatedRequest(url, options);
+
+        if (raw) {
+            return response;
+        }
+
         let data;
         try {
             data = await response.json();
-        } catch (jsonError) {
-            data = {
-                message: response.statusText || "Request failed",
-                status: response.status
-            };
+        } catch {
+            data = { message: response.statusText, status: response.status };
         }
 
         const nextResponse = NextResponse.json(data, { status: response.status });
-
         if (newAccessToken) {
             nextResponse.cookies.set("accessToken", newAccessToken, {
                 httpOnly: true,
@@ -104,18 +106,12 @@ export async function makeAuthenticatedApiRequest(
                 path: "/",
                 maxAge: 15 * 60,
             });
-        } else {
-            console.log("No new access token to set in cookies");
         }
-
         return nextResponse;
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error in makeAuthenticatedApiRequest:", error);
         return NextResponse.json(
-            {
-                message: "Internal server error",
-                error: error instanceof Error ? error.message : "Unknown error"
-            },
+            { message: "Internal server error", error: error.message || "Unknown" },
             { status: 500 }
         );
     }

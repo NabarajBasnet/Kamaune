@@ -15,27 +15,30 @@ import { Product } from '@/types/products';
 import { deleteProduct } from "@/services/store/products/product.service";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import Loading from "@/app/loading";
 
 interface ProductsGridListProps {
     products: Product[];
     count: number;
-    isLoading?: boolean;
+    isDeleting?: boolean;
     error?: string | null;
+    isLoading?: boolean
 }
 
 function ProductsGridList({
     products,
     count,
+    isLoading
 }: ProductsGridListProps) {
     const queryClient = useQueryClient();
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [isWarningOpen, setIsWarningOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isDeleting, setisDeleting] = useState(false);
 
     const handleProductDelete = async (slug: string) => {
         try {
-            setIsLoading(true);
+            setisDeleting(true);
             await deleteProduct(slug);
             toast.success('Product deleted successfully');
             queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -43,12 +46,12 @@ function ProductsGridList({
             console.error("Failed to delete product:", error);
             toast.error('Failed to delete product');
         } finally {
-            setIsLoading(false);
+            setisDeleting(false);
         }
     };
 
     // Handle case when products is undefined or null
-    if (!products) {
+    if (!isLoading && !products) {
         return (
             <div className="flex items-center justify-center h-64">
                 <div className="text-center">
@@ -61,8 +64,12 @@ function ProductsGridList({
         );
     }
 
+    if (isLoading) {
+        <Loading />
+    }
+
     // Handle empty products array
-    if (products.length === 0) {
+    if (!isLoading && products.length === 0) {
         return (
             <div className="flex items-center justify-center h-64">
                 <div className="text-center">
@@ -169,7 +176,7 @@ function ProductsGridList({
                                 description="This item will be moved to archive. You can restore it later if needed."
                                 confirmText="Archive"
                                 cancelText="Keep Active"
-                                isLoading={isLoading}
+                                isDeleting={isDeleting}
                                 variant="warning"
                             /> */}
 
@@ -190,13 +197,13 @@ function ProductsGridList({
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                        <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+                                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
                                         <AlertDialogAction
                                             onClick={() => handleProductDelete(product.slug)}
                                             className="bg-red-600 cursor-pointer hover:bg-red-500 dark:text-white"
-                                            disabled={isLoading}
+                                            disabled={isDeleting}
                                         >
-                                            {isLoading ? "Deleting..." : "Continue"}
+                                            {isDeleting ? "Deleting..." : "Continue"}
                                         </AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -315,13 +322,13 @@ function ProductsGridList({
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                    <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+                                    <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
                                     <AlertDialogAction
                                         onClick={() => handleProductDelete(product.slug)}
                                         className="bg-red-600 cursor-pointer hover:bg-red-500 dark:text-white"
-                                        disabled={isLoading}
+                                        disabled={isDeleting}
                                     >
-                                        {isLoading ? "Deleting..." : "Continue"}
+                                        {isDeleting ? "Deleting..." : "Continue"}
                                     </AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>

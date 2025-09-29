@@ -10,7 +10,7 @@ import { getAllMerchants } from "@/services/store/merchants/merchants.service";
 import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import ProductPhotoManagement from "./productPhotoManagement";
-import { CreateProduct, CreateProductWithFormData } from "@/services/store/products/product.service";
+import { CreateProduct } from "@/services/store/products/product.service";
 import { toast } from "sonner";
 
 interface ProductModalProps {
@@ -62,9 +62,12 @@ export default function ProductAddForm({
     const [cardType, setCardType] = useState<boolean>(false);
 
     const [productImage, setProductImage] = useState<File | null>(null);
-    const [productPhotos, setProductPhotos] = useState<Photo[]>([]);
+    console.log("Product Image: ", productImage);
+
     const [productGallery, setProductGallery] = useState<Photo[]>([]);
+    console.log("Product galary: ", productGallery);
     const [imageUrls, setImageUrls] = useState<Photo[]>([]);
+    console.log("Image URLs: ", imageUrls);
 
     const [isSlugCustomized, setIsSlugCustomized] = useState<boolean>(false);
 
@@ -82,7 +85,6 @@ export default function ProductAddForm({
     const productSlug = watch('slug');
 
     const handlePhotosChange = (photos: Photo[]) => {
-        setProductPhotos(photos);
         setProductGallery(photos);
         setImageUrls(photos);
     };
@@ -227,180 +229,88 @@ export default function ProductAddForm({
         setSelectedStatus(option.value);
     };
 
-    const fileToBase64 = (file: File): Promise<string> => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = error => reject(error);
-        });
-    };
-
-    const prepareProductData = async (data: any) => {
-        // Convert main image to base64
-        let mainImageBase64 = null;
-        if (productImage) {
-            try {
-                mainImageBase64 = await fileToBase64(productImage);
-            } catch (error) {
-                console.error("Error converting main image to base64:", error);
-            }
-        }
-
-        // Convert gallery images to base64
-        const galleryImages = await Promise.all(
-            productGallery.map(async (photo) => {
-                let base64Data = null;
-                if (photo.file) {
-                    try {
-                        base64Data = await fileToBase64(photo.file);
-                    } catch (error) {
-                        console.error("Error converting gallery image to base64:", error);
-                    }
-                }
-                return {
-                    id: photo.id,
-                    alt: photo.alt,
-                    isPrimary: photo.isPrimary,
-                    name: photo.file?.name || '',
-                    type: photo.file?.type || '',
-                    size: photo.file?.size || 0,
-                    base64: base64Data,
-                    url: photo.url
-                };
-            })
-        );
-
-        // Convert image URLs to base64
-        const imageUrlsData = await Promise.all(
-            imageUrls.map(async (photo) => {
-                let base64Data = null;
-                if (photo.file) {
-                    try {
-                        base64Data = await fileToBase64(photo.file);
-                    } catch (error) {
-                        console.error("Error converting image URL to base64:", error);
-                    }
-                }
-                return {
-                    id: photo.id,
-                    alt: photo.alt,
-                    isPrimary: photo.isPrimary,
-                    name: photo.file?.name || '',
-                    type: photo.file?.type || '',
-                    size: photo.file?.size || 0,
-                    base64: base64Data,
-                    url: photo.url
-                };
-            })
-        );
-
-        // Prepare the main product data as JSON
-        const productData = {
-            slug: data.slug,
-            is_compared: isCompared,
-            name: data.name,
-            category: parseInt(selectedCategory) || null,
-            sub_category: parseInt(selectedSubCategory) || null,
-            merchant: parseInt(selectedMerchant) || null,
-            brand: parseInt(selectedBrand) || null,
-            product_url: data.productUrl,
-            cashback_url: data.productUrl,
-            card_type: cardType,
-            product_label: data.productDescription,
-            category_price_starting_from: parseFloat(data.categoryPrice) || 0,
-            category_earn_text: commissionType === "percentage"
-                ? `${data.commissionValue}%`
-                : commissionType === "fixed"
-                    ? `₹${data.commissionValue}`
-                    : "",
-            category_detail: data.productDescription,
-            popularity: 0,
-            product_button_text: "Buy Now",
-            product_start_datetime: `${data.productStartDate}T00:00:00.000Z`,
-            product_end_datetime: `${data.productEndDate}T23:59:59.000Z`,
-            price: parseFloat(data.price) || 0,
-            is_hero_product: heroProduct,
-            status: selectedStatus,
-            cashback_type: cashbackType,
-            has_coupon: hasCoupon,
-
-            // Send images as base64 strings
-            image_url: mainImageBase64,
-            product_gallery: galleryImages,
-            image_urls: imageUrlsData
-        };
-
-        console.log('Product data to send: ', productData);
-        return productData;
-    };
-
-    const uploadImagesWithFormData = async (productData: any) => {
-        const formData = new FormData();
-
-        Object.entries(productData).forEach(([key, value]) => {
-            if (value !== null && value !== undefined) {
-                if (Array.isArray(value)) {
-                    formData.append(key, JSON.stringify(value));
-                } else {
-                    formData.append(key, String(value));
-                }
-            }
-        });
-
-        // Add main image if exists
-        if (productImage) {
-            formData.append('image_url', productImage);
-        }
-
-        // Add gallery images
-        productGallery.forEach((photo, index) => {
-            if (photo.file) {
-                formData.append('product_gallery', photo.file);
-                formData.append(`product_gallery_alt_${index}`, photo.alt);
-                formData.append(`product_gallery_primary_${index}`, photo.isPrimary.toString());
-            }
-        });
-
-        // Add image URLs
-        imageUrls.forEach((photo, index) => {
-            if (photo.file) {
-                formData.append('image_urls', photo.file);
-                formData.append(`image_urls_alt_${index}`, photo.alt);
-                formData.append(`image_urls_primary_${index}`, photo.isPrimary.toString());
-            }
-        });
-
-        for (let [key, value] of formData.entries()) {
-            console.log(key, value);
-        }
-
-        return formData;
-    };
-
     const handleOnSubmit = async (data: any) => {
         try {
-            const productData = await prepareProductData(data);
+            const productData = {
+                slug: data.slug,
+                is_compared: isCompared,
+                name: data.name,
+                category: parseInt(selectedCategory) || null,
+                sub_category: parseInt(selectedSubCategory) || null,
+                merchant: parseInt(selectedMerchant) || null,
+                brand: parseInt(selectedBrand) || null,
+                product_url: data.productUrl,
+                image_url: '',
+                product_galary: [],
+                image_urls: [],
+                cashback_url: data.productUrl,
+                card_type: cardType,
+                product_label: data.productDescription,
+                category_price_starting_from: parseFloat(data.categoryPrice) || 0,
+                category_earn_text:
+                    commissionType === "percentage"
+                        ? `${data.commissionValue}%`
+                        : commissionType === "fixed"
+                            ? `₹${data.commissionValue}`
+                            : "",
+                category_detail: data.productDescription,
+                popularity: 0,
+                product_button_text: "Buy Now",
+                product_start_datetime: `${data.productStartDate}T00:00:00.000Z`,
+                product_end_datetime: `${data.productEndDate}T23:59:59.000Z`,
+                price: parseFloat(data.price) || 0,
+                is_hero_product: heroProduct,
+                status: selectedStatus,
+                cashback_type: cashbackType,
+                has_coupon: hasCoupon,
+            };
 
-            const response = await CreateProduct(productData);
+            console.log("Product data: ", productData);
 
-            reset();
-            setProductImage(null);
-            setProductPhotos([]);
-            setProductGallery([]);
-            setImageUrls([]);
+            const formData = new FormData();
 
-            onClose();
+            for (const [key, value] of formData.entries()) {
+
+                // Log
+                if (value) {
+                    console.log(key, '=> File', value)
+                } else {
+                    console.log(key, '=>', value)
+                }
+            }
+
+            Object.entries(productData).forEach(([key, value]) => {
+                if (value !== null && value !== undefined) {
+                    formData.append(key, String(value));
+                }
+            });
+
+            if (productImage) {
+                formData.append("image_url", productImage);
+            }
+
+            productGallery.forEach((photo, i) => {
+                formData.append(`product_gallery[${i}]`, photo.file);
+            });
+
+            imageUrls.forEach((photo, i) => {
+                formData.append(`image_urls[${i}]`, photo.url);
+            });
+
+            const response = await fetch("/api/products/create", {
+                method: "POST",
+                body: JSON.stringify(productData),
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                toast.success("Product created successfully!");
+            } else {
+                toast.error(`Error creating product: ${result.message || "Unknown error"}`);
+            }
         } catch (error: any) {
             console.error("Error creating product:", error);
-
-            if (error.response) {
-                console.error("Error response:", error.response);
-            }
-            if (error.message) {
-                console.error("Error message:", error.message);
-            }
-            toast.error(`Error creating product: ${error.message || 'Unknown error'}`)
+            toast.error(`Error: ${error.message || "Unknown error"}`);
         }
     };
 
@@ -804,12 +714,12 @@ export default function ProductAddForm({
                         </div>
 
                         <div className="flex gap-3">
-                            <Button type="button" variant="ghost" onClick={onClose}>
+                            <Button type="button" variant="ghost" className="cursor-pointer" onClick={onClose}>
                                 Cancel
                             </Button>
                             <Button
                                 type="submit"
-                                className="bg-emerald-600 text-white hover:bg-emerald-700"
+                                className="cursor-pointer bg-emerald-600 text-white hover:bg-emerald-700"
                                 disabled={isSubmitting}
                             >
                                 {isSubmitting ? "Processing..." : mode === "edit" ? "Update Product" : "Create Product"}
