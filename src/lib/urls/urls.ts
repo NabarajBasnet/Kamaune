@@ -25,3 +25,11 @@ export const MERCHANTS_URLS = {
 export const BRANDS_URLS = {
   GET_ALL: `${BASE_URL}/store/brands`
 }
+
+export const OFFER_URLS = {
+  GET_ALL: `${BASE_URL}/store/offers`,
+  CREATE_OFFER: `${BASE_URL}/store/offers`,
+  GET_OFFER_BY_SLUG: `${BASE_URL}/store/offers`,
+  UPDATE_OFFER: `${BASE_URL}/store/offers`,
+  DELETE_OFFER: `${BASE_URL}/store/offers`,
+}

@@ -1,5 +1,6 @@
 'use client';
 
+import { ChartCard } from "../ui/ChartCard";
 import React, { useState, useEffect } from "react";
 import {
     MousePointer,
@@ -157,18 +158,6 @@ const stats = [
         color: "yellow",
     },
 ];
-
-// ChartCard component (you'll need to implement this based on your existing component)
-const ChartCard = ({ title, data, defaultPeriod }: { title: string; data: any; defaultPeriod: string }) => {
-    return (
-        <Card className="p-6 bg-white/50 dark:bg-gray-800/50 border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm">
-            <h3 className="text-lg font-semibold mb-4 text-foreground">{title}</h3>
-            <div className="h-64 flex items-center justify-center">
-                <div className="text-muted-foreground">Chart component would go here</div>
-            </div>
-        </Card>
-    );
-};
 
 export function Dashboard() {
     const navigate = useNavigate();
@@ -597,32 +586,6 @@ export function Dashboard() {
                     </Button>
                 </div>
             </Card>
-        </div>
-    );
-}
-
-function LinkItem({ name, stats }: { name: string; stats: string }) {
-    return (
-        <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 hover:bg-background/80 transition-colors">
-            <div className="flex-1 min-w-0">
-                <p className="font-medium truncate text-foreground">{name}</p>
-                <p className="text-sm text-muted-foreground">{stats}</p>
-            </div>
-            <button className="text-emerald-500 hover:text-emerald-600 ml-4 p-1 rounded-md hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors">
-                <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                    ></path>
-                </svg>
-            </button>
         </div>
     );
 }

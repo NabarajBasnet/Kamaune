@@ -5,6 +5,8 @@ import { ThemeProvider } from "@/components/Providers/Theme/ThemeProvider";
 import ReactQueryClientProvider from "@/components/Providers/ReactQuery/ReactQueryProvider";
 import ReactReduxProvider from "@/components/Providers/Redux/ReduxProvider";
 import SonnerToastProvider from "@/components/Providers/SonnerProvider/SonnerProvider";
+import { CampaignProvider } from "@/contexts/CampaignContext";
+import { MerchantProvider } from "@/contexts/MerchantContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

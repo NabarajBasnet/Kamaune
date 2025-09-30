@@ -464,7 +464,7 @@ export default function ProductAddForm({
                                 options={merchantsOptions}
                                 onSelect={handleMerchantSelect}
                                 placeholder="Select Merchant"
-                                disabled={loadingOptions?.merchants}
+                                disabled={isMerchantsLoading}
                             />
                         </div>
 
