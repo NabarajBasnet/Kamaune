@@ -18,16 +18,13 @@ export async function PUT(req: NextRequest) {
     try {
         const url = new URL(req.url);
         const id = url.searchParams.get("id");
-        if (!id) {
-            return new Response(JSON.stringify({ message: "Missing profile id" }), { status: 400 });
-        }
 
-        const formData = await req.formData();
-
-        const response = await makeAuthenticatedApiRequest(`${USER_PROFILES.GET_PROFILE}/${id}/`, {
+        const payload = await req.json()
+        console.log("Payload: ", payload)
+        const response = await makeAuthenticatedApiRequest(`${USER_PROFILES.PUT_PROFILE}/${id}/`, {
             method: "PUT",
-            body: formData,
-        }, { raw: true });
+            body: JSON.stringify(payload),
+        });
 
         return response as Response;
     } catch (error: any) {

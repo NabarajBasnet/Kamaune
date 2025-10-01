@@ -59,8 +59,11 @@ export type UserProfileApiItem = {
         first_name: string;
         last_name: string;
         username: string;
+        email_verified?: boolean
     };
     wallet: any | null;
+    business_type?: number;
+
 }
 
 export interface ProfileFormData {

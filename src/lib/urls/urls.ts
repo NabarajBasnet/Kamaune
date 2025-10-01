@@ -35,5 +35,6 @@ export const OFFER_URLS = {
 }
 
 export const USER_PROFILES = {
-  GET_PROFILE: `${BASE_URL}/auth/userprofiles`
+  GET_PROFILE: `${BASE_URL}/auth/userprofiles`,
+  PUT_PROFILE: `${BASE_URL}/auth/userprofiles`
 }
