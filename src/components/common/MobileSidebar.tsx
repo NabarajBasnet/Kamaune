@@ -12,21 +12,15 @@ import { useDispatch, useSelector } from "react-redux";
 import { toggleSidebar } from '@/states/store/slicer';
 import { RootState } from "@/states/store";
 import { usePathname, useRouter } from 'next/navigation';
-import { logoutService } from "@/services/auth/auth.service";
 import { MobileSidebarProps } from "@/types/profile";
 
-function MobileSidebar({ profileData }: MobileSidebarProps) {
+function MobileSidebar({ profileData, logout }: MobileSidebarProps) {
 
     const dispatch = useDispatch();
     const router = useRouter();
     const pathname = usePathname();
     const clientSidebar = useSelector((state: RootState) => state.main.sidebarMinimized);
     const [expandedMenus, setExpandedMenus] = useState<{ [key: string]: boolean }>({});
-
-    const logout = async () => {
-        await logoutService()
-        router.push('/login');
-    };
 
     const toggleMenu = (menuIndex: string) => {
         setExpandedMenus(prev => ({

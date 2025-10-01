@@ -41,4 +41,5 @@ export interface ProfileApiResponse {
 
 export interface MobileSidebarProps {
     profileData: UserProfile | null;
+    logout: () => void
 }

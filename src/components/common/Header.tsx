@@ -1,5 +1,6 @@
 'use client';
 
+import { logoutService } from "@/services/auth/auth.service";
 import { TbLayoutSidebarRightCollapse, TbLayoutSidebarLeftCollapse } from "react-icons/tb";
 import { useDispatch, useSelector } from "react-redux";
 import { toggleSidebar } from "@/states/store/slicer";
@@ -35,8 +36,6 @@ const Header = () => {
         queryKey: ['profile'],
         queryFn: () => getProfileData()
     });
-
-    console.log("Data: ", data)
 
     const profileData: UserProfile | null = data?.data?.results?.[0] || null;
 
@@ -114,6 +113,12 @@ const Header = () => {
         }
     ];
 
+    const logout = async () => {
+        await logoutService()
+        router.push('/login');
+    };
+
+
     return (
         <div className="w-full sticky top-0 flex items-center justify-between p-3 py-4 dark:bg-gray-900 bg-white shadow z-50">
             <div>
@@ -128,7 +133,7 @@ const Header = () => {
                     )}
                 </button>
 
-                <MobileSidebar profileData={profileData} />
+                <MobileSidebar profileData={profileData} logout={logout} />
             </div>
 
             <div className="flex items-center space-x-4">
@@ -282,16 +287,16 @@ const Header = () => {
                             {/* Menu Items */}
                             <div className="p-2">
                                 <button
-                                    onClick={() => handleNavigation('/profile')}
-                                    className="w-full flex items-center space-x-3 p-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                                    onClick={() => handleNavigation('/dashboard/profile')}
+                                    className="w-full flex cursor-pointer items-center space-x-3 p-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
                                 >
                                     <UserIcon className="w-4 h-4" />
                                     <span>View Profile</span>
                                 </button>
 
                                 <button
-                                    onClick={() => handleNavigation('/settings')}
-                                    className="w-full flex items-center space-x-3 p-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                                    onClick={() => handleNavigation('/dashboard/settings')}
+                                    className="w-full flex cursor-pointer items-center space-x-3 p-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
                                 >
                                     <Settings className="w-4 h-4" />
                                     <span>Settings</span>
@@ -312,11 +317,9 @@ const Header = () => {
                             <div className="p-2 border-t border-gray-100 dark:border-gray-700">
                                 <button
                                     onClick={() => {
-                                        // Add logout logic here
-                                        console.log('Logout clicked');
-                                        setShowProfile(false);
+                                        logout()
                                     }}
-                                    className="w-full flex items-center space-x-3 p-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
+                                    className="w-full cursor-pointer flex items-center space-x-3 p-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
                                 >
                                     <LogOut className="w-4 h-4" />
                                     <span>Sign Out</span>
