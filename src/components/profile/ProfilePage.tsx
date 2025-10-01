@@ -14,7 +14,9 @@ import {
     Facebook,
     X,
 } from "lucide-react";
-
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getProfileData, updateUserProfile } from "@/services/userprofiles/userprofile.service";
+import { UserProfileApiItem } from "@/types/profile";
 type ActiveTab = "profile" | "business" | "social";
 
 // Business Type mapping
@@ -27,60 +29,31 @@ const businessTypes: Record<number, string> = {
     6: "Health & Wellness",
 };
 
-// Mock data
-const mockProfileData = {
-    id: 68,
-    user: 68,
-    Business_name: "Tech Innovations Ltd",
-    Phone_number: "+1 (555) 123-4567",
-    city: "Kathmandu",
-    State_Province: 4,
-    address: "123 Main Street, Thamel",
-    Business_Type: 5,
-    url: "https://techinnovations.com",
-    affiliate_data: "Premium technology partner with 5+ years of experience in software development and IT solutions.",
-    facebook: "https://facebook.com/techinnovations",
-    instagram: "https://instagram.com/techinnovations",
-    Commission_payment: 15,
-    profile_picture: null,
-};
-
-const mockMerchantsData = [
-    {
-        id: 1,
-        name: "Tech Store",
-        slug: "tech-store",
-        status: "active",
-        description: "Your one-stop shop for all tech gadgets"
-    },
-    {
-        id: 2,
-        name: "Software Solutions",
-        slug: "software-solutions",
-        status: "active",
-        description: "Custom software development services"
-    }
-];
-
 export function Profile() {
     const [activeTab, setActiveTab] = useState<ActiveTab>("profile");
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
-        Business_name: "",
-        Phone_number: "",
+        address_line_1: "",
+        address_line_2: "",
         city: "",
-        State_Province: 4,
-        address: "",
-        Business_Type: 4,
-        url: "",
-        affiliate_data: "",
+        province: "",
+        country: "",
         facebook: "",
         instagram: "",
     });
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [profileData, setProfileData] = useState(mockProfileData);
-    const [merchantsData, setMerchantsData] = useState(mockMerchantsData);
+    const [profileData, setProfileData] = useState<UserProfileApiItem | null>(null);
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+
+    const { data, isLoading: isProfileLoading } = useQuery({
+        queryKey: ['profile'],
+        queryFn: () => getProfileData()
+    })
+
+    console.log("Data: ", data);
+
+    const queryClient = useQueryClient();
 
     // Simulate loading state
     useEffect(() => {
@@ -91,21 +64,26 @@ export function Profile() {
         return () => clearTimeout(timer);
     }, []);
 
-    // Initialize form data when component mounts
+    // Initialize profile and form data from API
     useEffect(() => {
+        const apiItem: UserProfileApiItem | undefined = data?.data?.results?.[0];
+        if (!apiItem) return;
+        setProfileData(apiItem);
+
+        // Derive social links if provided
+        const facebookLink = apiItem.social?.find(s => (s.platform || '').toLowerCase() === 'facebook' || (s.url || '').includes('facebook'))?.url || "";
+        const instagramLink = apiItem.social?.find(s => (s.platform || '').toLowerCase() === 'instagram' || (s.url || '').includes('instagram'))?.url || "";
+
         setFormData({
-            Business_name: profileData.Business_name,
-            Phone_number: profileData.Phone_number,
-            city: profileData.city,
-            State_Province: profileData.State_Province,
-            address: profileData.address || "",
-            Business_Type: profileData.Business_Type,
-            url: profileData.url || "",
-            affiliate_data: profileData.affiliate_data,
-            facebook: profileData.facebook || "",
-            instagram: profileData.instagram || "",
+            address_line_1: apiItem.address_line_1 || "",
+            address_line_2: apiItem.address_line_2 || "",
+            city: apiItem.city || "",
+            province: apiItem.province || "",
+            country: apiItem.country || "",
+            facebook: facebookLink,
+            instagram: instagramLink,
         });
-    }, [profileData]);
+    }, [data]);
 
     const getInitials = (name: string) => {
         return name
@@ -132,14 +110,26 @@ export function Profile() {
     const handleSaveProfile = async () => {
         setIsSaving(true);
         try {
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            if (!profileData?.id) throw new Error('Profile not loaded');
 
-            // Update mock data with form data
-            setProfileData(prev => ({
-                ...prev,
-                ...formData
-            }));
+            const payload = new FormData();
+            Object.entries(formData).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && String(value).trim() !== "") {
+                    payload.append(key, String(value));
+                }
+            });
+            if (selectedImage) {
+                payload.append('profile_picture', selectedImage);
+            }
+
+            const updated = await updateUserProfile(profileData.id, payload);
+
+            const updatedItem: UserProfileApiItem | undefined = updated?.data || updated;
+            if (updatedItem && updatedItem.id) {
+                setProfileData(updatedItem);
+            } else {
+                await queryClient.invalidateQueries({ queryKey: ['profile'] });
+            }
 
             setIsEditing(false);
         } catch (error) {
@@ -150,7 +140,7 @@ export function Profile() {
     };
 
     // Show loading state
-    if (isLoading) {
+    if (isLoading || isProfileLoading) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 max-w-7xl">
@@ -168,8 +158,8 @@ export function Profile() {
     }
 
     return (
-        <div className="min-h-screen dark:bg-slate-950">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 max-w-7xl">
+        <div className="w-full min-h-screen dark:bg-slate-950">
+            <div className="w-full">
                 {/* Header Section */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
                     <div className="flex-1">
@@ -253,30 +243,34 @@ export function Profile() {
                                         {/* Profile Picture */}
                                         <div className="flex flex-col items-center space-y-4">
                                             <div className="relative">
-                                                {profileData.profile_picture ? (
-                                                    <img
-                                                        src={profileData.profile_picture}
-                                                        alt="Profile Picture"
-                                                        className="w-32 h-32 rounded-full object-cover border-4 border-emerald-500"
-                                                        onError={(e) => {
-                                                            e.currentTarget.style.display = "none";
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-4xl font-bold text-white">
-                                                        {profileData.Business_name.charAt(0).toUpperCase()}
-                                                    </div>
-                                                )}
+                                                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-4xl font-bold text-white overflow-hidden border-4 border-emerald-500">
+                                                    {profileData?.profile_picture ? (
+                                                        <img
+                                                            src={profileData.profile_picture}
+                                                            alt="Profile Picture"
+                                                            className="w-full h-full object-cover"
+                                                            onError={(e) => {
+                                                                e.currentTarget.style.display = "none";
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <>
+                                                            {profileData?.user?.first_name?.charAt(0)?.toUpperCase() || 'U'}
+                                                        </>
+                                                    )}
+                                                </div>
                                                 {isEditing && (
-                                                    <button className="absolute bottom-0 right-0 bg-emerald-500 hover:bg-emerald-600 p-2 rounded-full transition-colors">
+                                                    <label className="absolute bottom-0 right-0 bg-emerald-500 hover:bg-emerald-600 p-2 rounded-full transition-colors cursor-pointer">
                                                         <Camera className="w-4 h-4 text-white" />
-                                                    </button>
+                                                        <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                                            const file = e.target.files?.[0] || null;
+                                                            setSelectedImage(file);
+                                                        }} />
+                                                    </label>
                                                 )}
                                             </div>
-                                            {isEditing && (
-                                                <button className="text-emerald-600 hover:text-emerald-700 text-sm font-medium">
-                                                    Change Photo
-                                                </button>
+                                            {isEditing && selectedImage && (
+                                                <span className="text-emerald-600 text-sm font-medium">{selectedImage.name}</span>
                                             )}
                                         </div>
 
@@ -285,48 +279,20 @@ export function Profile() {
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                        Business Name
+                                                        First Name
                                                     </label>
-                                                    {isEditing ? (
-                                                        <input
-                                                            type="text"
-                                                            value={formData.Business_name}
-                                                            onChange={(e) =>
-                                                                handleInputChange(
-                                                                    "Business_name",
-                                                                    e.target.value
-                                                                )
-                                                            }
-                                                            className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                                                        />
-                                                    ) : (
-                                                        <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
-                                                            {profileData.Business_name}
-                                                        </p>
-                                                    )}
+                                                    <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
+                                                        {profileData?.user?.first_name || '-'}
+                                                    </p>
                                                 </div>
 
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                        Phone Number
+                                                        Last Name
                                                     </label>
-                                                    {isEditing ? (
-                                                        <input
-                                                            type="tel"
-                                                            value={formData.Phone_number}
-                                                            onChange={(e) =>
-                                                                handleInputChange(
-                                                                    "Phone_number",
-                                                                    e.target.value
-                                                                )
-                                                            }
-                                                            className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                                                        />
-                                                    ) : (
-                                                        <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
-                                                            {profileData.Phone_number}
-                                                        </p>
-                                                    )}
+                                                    <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
+                                                        {profileData?.user?.last_name || '-'}
+                                                    </p>
                                                 </div>
 
                                                 <div>
@@ -344,60 +310,66 @@ export function Profile() {
                                                         />
                                                     ) : (
                                                         <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
-                                                            {profileData.city}
+                                                            {profileData?.city || '-'}
                                                         </p>
                                                     )}
                                                 </div>
 
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                        State/Province
+                                                        Province/State
                                                     </label>
                                                     {isEditing ? (
-                                                        <select
-                                                            value={formData.State_Province}
+                                                        <input
+                                                            type="text"
+                                                            value={formData.province}
                                                             onChange={(e) =>
-                                                                handleInputChange(
-                                                                    "State_Province",
-                                                                    parseInt(e.target.value)
-                                                                )
+                                                                handleInputChange("province", e.target.value)
                                                             }
                                                             className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                                                        >
-                                                            <option value={1}>Province 1</option>
-                                                            <option value={2}>Province 2</option>
-                                                            <option value={3}>Bagmati Province</option>
-                                                            <option value={4}>Gandaki Province</option>
-                                                            <option value={5}>Lumbini Province</option>
-                                                            <option value={6}>Karnali Province</option>
-                                                            <option value={7}>Sudurpashchim Province</option>
-                                                        </select>
+                                                        />
                                                     ) : (
                                                         <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
-                                                            {profileData.State_Province === 4
-                                                                ? "Gandaki Province"
-                                                                : `Province ${profileData.State_Province}`}
+                                                            {profileData?.province || '-'}
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                        Country
+                                                    </label>
+                                                    {isEditing ? (
+                                                        <input type="text" value={formData.country} onChange={(e) => handleInputChange("country", e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+                                                    ) : (
+                                                        <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
+                                                            {profileData?.country || '-'}
                                                         </p>
                                                     )}
                                                 </div>
 
                                                 <div className="md:col-span-2">
                                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                        Address
+                                                        Address Line 1
                                                     </label>
                                                     {isEditing ? (
-                                                        <input
-                                                            type="text"
-                                                            value={formData.address}
-                                                            onChange={(e) =>
-                                                                handleInputChange("address", e.target.value)
-                                                            }
-                                                            placeholder="Enter your address"
-                                                            className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                                                        />
+                                                        <input type="text" value={formData.address_line_1} onChange={(e) => handleInputChange("address_line_1", e.target.value)} placeholder="Street address, P.O. box" className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
                                                     ) : (
                                                         <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
-                                                            {formData.address || "No address provided"}
+                                                            {profileData?.address_line_1 || '—'}
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                <div className="md:col-span-2">
+                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                        Address Line 2
+                                                    </label>
+                                                    {isEditing ? (
+                                                        <input type="text" value={formData.address_line_2} onChange={(e) => handleInputChange("address_line_2", e.target.value)} placeholder="Apartment, suite, unit, building, floor, etc." className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+                                                    ) : (
+                                                        <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
+                                                            {profileData?.address_line_2 || '—'}
                                                         </p>
                                                     )}
                                                 </div>
@@ -465,91 +437,22 @@ export function Profile() {
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                         <div className="space-y-6">
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                    Business Type
-                                                </label>
-                                                {isEditing ? (
-                                                    <select
-                                                        value={formData.Business_Type}
-                                                        onChange={(e) =>
-                                                            handleInputChange(
-                                                                "Business_Type",
-                                                                parseInt(e.target.value)
-                                                            )
-                                                        }
-                                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                                                    >
-                                                        {Object.entries(businessTypes).map(([id, name]) => (
-                                                            <option key={id} value={id}>
-                                                                {name}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                ) : (
-                                                    <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
-                                                        {businessTypes[profileData.Business_Type] ||
-                                                            "Other"}
-                                                    </p>
-                                                )}
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                                                <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">{profileData?.user?.email || '-'}</p>
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                    Commission Rate (%)
-                                                </label>
-                                                <div className="px-4 py-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                                                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                                                        {profileData.Commission_payment}%
-                                                    </p>
-                                                    <p className="text-sm text-emerald-700 dark:text-emerald-300">
-                                                        Current rate
-                                                    </p>
-                                                </div>
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Username</label>
+                                                <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">{profileData?.user?.username || '-'}</p>
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                    Website URL
-                                                </label>
-                                                {isEditing ? (
-                                                    <input
-                                                        type="url"
-                                                        value={formData.url}
-                                                        onChange={(e) =>
-                                                            handleInputChange("url", e.target.value)
-                                                        }
-                                                        placeholder="https://yourwebsite.com"
-                                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                                                    />
-                                                ) : (
-                                                    <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
-                                                        {profileData.url || "No website provided"}
-                                                    </p>
-                                                )}
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
+                                                <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">{`${profileData?.user?.first_name || ''} ${profileData?.user?.last_name || ''}`.trim() || '-'}</p>
                                             </div>
                                         </div>
 
                                         <div className="space-y-6">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                    Affiliate Data
-                                                </label>
-                                                {isEditing ? (
-                                                    <textarea
-                                                        value={formData.affiliate_data}
-                                                        onChange={(e) =>
-                                                            handleInputChange("affiliate_data", e.target.value)
-                                                        }
-                                                        rows={4}
-                                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                                                    />
-                                                ) : (
-                                                    <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium min-h-[120px] flex items-start">
-                                                        {profileData.affiliate_data}
-                                                    </p>
-                                                )}
-                                            </div>
-
                                             <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                                                 <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
                                                     Account Information
@@ -557,18 +460,18 @@ export function Profile() {
                                                 <div className="space-y-2 text-sm">
                                                     <div className="flex justify-between">
                                                         <span className="text-blue-700 dark:text-blue-300">
-                                                            Publisher ID:
+                                                            Profile ID:
                                                         </span>
                                                         <span className="font-medium text-blue-900 dark:text-blue-100">
-                                                            {profileData.id}
+                                                            {profileData?.id || '-'}
                                                         </span>
                                                     </div>
                                                     <div className="flex justify-between">
                                                         <span className="text-blue-700 dark:text-blue-300">
-                                                            User ID:
+                                                            Email:
                                                         </span>
                                                         <span className="font-medium text-blue-900 dark:text-blue-100">
-                                                            {profileData.user}
+                                                            {profileData?.user?.email || '-'}
                                                         </span>
                                                     </div>
                                                 </div>

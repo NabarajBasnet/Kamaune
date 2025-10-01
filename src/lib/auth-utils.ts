@@ -32,13 +32,19 @@ export async function makeAuthenticatedRequest(
         const refreshToken = cookieStore.get("refreshToken")?.value;
 
         const doFetch = async (token?: string) => {
+            // Avoid forcing JSON content-type when sending FormData (e.g., multipart uploads)
+            const isFormData =
+                typeof FormData !== "undefined" && options.body instanceof FormData;
+
+            const mergedHeaders: HeadersInit = {
+                ...(isFormData ? {} : { "Content-Type": "application/json" }),
+                ...(options.headers || {}),
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            };
+
             return fetch(url, {
                 ...options,
-                headers: {
-                    "Content-Type": "application/json",
-                    ...(options.headers || {}),
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                },
+                headers: mergedHeaders,
                 credentials: "include",
             });
         };

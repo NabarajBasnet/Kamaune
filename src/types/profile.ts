@@ -43,3 +43,22 @@ export interface MobileSidebarProps {
     profileData: UserProfile | null;
     logout: () => void
 }
+
+
+export type UserProfileApiItem = {
+    id: number;
+    address_line_1: string;
+    address_line_2: string;
+    city: string;
+    province: string;
+    country: string;
+    profile_picture: string | null;
+    social: Array<{ platform?: string; url?: string }>;
+    user: {
+        email: string;
+        first_name: string;
+        last_name: string;
+        username: string;
+    };
+    wallet: any | null;
+}
