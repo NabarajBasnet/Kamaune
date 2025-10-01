@@ -1,3 +1,5 @@
+import { toast } from "sonner";
+
 interface dataProps {
   email: string;
   password: string;
@@ -20,6 +22,7 @@ export const loginService = async (data: dataProps) => {
         errors: json?.errors ?? { form: json?.message || "Login failed" },
       };
     }
+    toast.success('Log in successful');
     return json;
   } catch (error: any) {
     return { errors: { form: error?.message || "Network error" } };
@@ -29,7 +32,7 @@ export const loginService = async (data: dataProps) => {
 export const logoutService = async () => {
   try {
     await fetch(`/api/auth/logout`, { method: "POST" });
+    toast.success('Log out successfully');
   } catch (e) {
-    // ignore
   }
 };

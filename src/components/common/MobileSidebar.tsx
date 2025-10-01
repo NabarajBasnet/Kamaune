@@ -12,6 +12,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { toggleSidebar } from '@/states/store/slicer';
 import { RootState } from "@/states/store";
 import { usePathname, useRouter } from 'next/navigation';
+import { logoutService } from "@/services/auth/auth.service";
 
 function MobileSidebar() {
     const dispatch = useDispatch();
@@ -20,8 +21,8 @@ function MobileSidebar() {
     const clientSidebar = useSelector((state: RootState) => state.main.sidebarMinimized);
     const [expandedMenus, setExpandedMenus] = useState<{ [key: string]: boolean }>({});
 
-    const logout = () => {
-        localStorage.removeItem('token');
+    const logout = async () => {
+        await logoutService()
         router.push('/login');
     };
 

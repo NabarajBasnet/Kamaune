@@ -5,7 +5,6 @@ export async function generateMetadate() {
     title: "Dashboard Overview - Kamaune",
     description: "Dashboard overview page"
   })
-
 }
 
 export default function Page() {

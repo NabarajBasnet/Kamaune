@@ -1,23 +1,25 @@
 import { NextResponse, NextRequest } from "next/server";
 
-// Protect dashboard routes; redirect unauthenticated users to /login
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  const accessToken = request.cookies.get("accessToken")?.value || null;
+  const refreshToken = request.cookies.get("refreshToken")?.value || null;
+
+  const isAuthenticated = !!(refreshToken || accessToken);
 
   const isDashboard = pathname.startsWith("/dashboard");
   const isAuthPage =
     pathname.startsWith("/login") || pathname.startsWith("/signup");
 
-  const accessToken = request.cookies.get("accessToken")?.value;
-
-  if (isDashboard && !accessToken) {
+  if (isDashboard && !isAuthenticated) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
 
-  if (isAuthPage && accessToken) {
+  if (isAuthPage && isAuthenticated) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

@@ -1,6 +1,6 @@
 'use client';
 
-import { RiSidebarUnfoldLine, RiSidebarFoldLine } from "react-icons/ri";
+import { TbLayoutSidebarRightCollapse, TbLayoutSidebarLeftCollapse } from "react-icons/tb";
 import { useDispatch, useSelector } from "react-redux";
 import { toggleSidebar } from "@/states/store/slicer";
 import { Sun, Moon, User, ChevronDown, CheckCircle, Info, AlertCircle, DollarSignIcon, Bell } from "lucide-react";
@@ -105,9 +105,9 @@ const Header = () => {
                     className="p-2 hidden md:flex rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 >
                     {clientSidebar ? (
-                        <RiSidebarUnfoldLine className="w-6 h-6 text-green-600" />
+                        <TbLayoutSidebarRightCollapse className="w-6 h-6 text-green-600" />
                     ) : (
-                        <RiSidebarFoldLine className="w-6 h-6 text-green-600" />
+                        <TbLayoutSidebarLeftCollapse className="w-6 h-6 text-green-600" />
                     )}
                 </button>
 

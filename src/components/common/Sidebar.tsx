@@ -1,5 +1,6 @@
 'use client';
 
+import { logoutService } from '@/services/auth/auth.service';
 import { menuItems, accountMenuItems } from '@/constants/sidebar';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
@@ -13,6 +14,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { RootState } from '@/states/store';
+import { toast } from 'sonner';
 
 const Sidebar = () => {
     const router = useRouter();
@@ -25,13 +27,13 @@ const Sidebar = () => {
         setMounted(true);
     }, []);
 
-    const logout = () => {
-        localStorage.removeItem('token');
+    const logout = async () => {
+        await logoutService();
         router.push('/login');
     };
 
     const toggleMenu = (menuIndex: string) => {
-        if (clientSidebar) return; // Don't toggle in minimized mode
+        if (clientSidebar) return;
 
         setExpandedMenus(prev => ({
             ...prev,
