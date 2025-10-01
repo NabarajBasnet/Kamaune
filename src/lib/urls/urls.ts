@@ -33,3 +33,7 @@ export const OFFER_URLS = {
   UPDATE_OFFER: `${BASE_URL}/store/offers`,
   DELETE_OFFER: `${BASE_URL}/store/offers`,
 }
+
+export const USER_PROFILES = {
+  GET_PROFILE: `${BASE_URL}/auth/userprofiles`
+}

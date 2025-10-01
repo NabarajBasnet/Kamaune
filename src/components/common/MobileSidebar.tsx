@@ -1,5 +1,5 @@
 import { RiSidebarUnfoldLine, RiSidebarFoldLine } from "react-icons/ri";
-import { LogOut, ChevronDown } from "lucide-react";
+import { LogOut, ChevronDown, User, Mail, MapPin, CreditCard } from "lucide-react";
 import React, { useState } from 'react'
 import {
     Sheet,
@@ -13,8 +13,10 @@ import { toggleSidebar } from '@/states/store/slicer';
 import { RootState } from "@/states/store";
 import { usePathname, useRouter } from 'next/navigation';
 import { logoutService } from "@/services/auth/auth.service";
+import { MobileSidebarProps } from "@/types/profile";
 
-function MobileSidebar() {
+function MobileSidebar({ profileData }: MobileSidebarProps) {
+
     const dispatch = useDispatch();
     const router = useRouter();
     const pathname = usePathname();
@@ -35,6 +37,16 @@ function MobileSidebar() {
 
     const isActiveRoute = (path: string) => {
         return pathname === path || pathname.startsWith(path + '/');
+    };
+
+    const getInitials = (user: { first_name: string; last_name: string } | undefined) => {
+        if (!user) return 'U';
+        return `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase();
+    };
+
+    const getFullName = (user: { first_name: string; last_name: string } | undefined) => {
+        if (!user) return 'User';
+        return `${user.first_name} ${user.last_name}`.trim();
     };
 
     const renderMenuItem = (item: any, index: number, type: 'main' | 'account' = 'main') => {
@@ -195,6 +207,53 @@ function MobileSidebar() {
                 </button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[280px] p-0">
+                {/* Profile Section */}
+                <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+                    <div className="flex items-center space-x-3">
+                        {profileData?.profile_picture ? (
+                            <img
+                                src={profileData.profile_picture}
+                                alt={getFullName(profileData.user)}
+                                className="w-12 h-12 rounded-full object-cover border-2 border-green-500"
+                            />
+                        ) : (
+                            <div className="w-12 h-12 rounded-full bg-green-500 text-white flex items-center justify-center text-lg font-medium">
+                                {getInitials(profileData?.user)}
+                            </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                                {getFullName(profileData?.user)}
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate flex items-center">
+                                <Mail className="w-3 h-3 mr-1 flex-shrink-0" />
+                                {profileData?.user.email || 'No email'}
+                            </p>
+                            {(profileData?.city || profileData?.country) && (
+                                <p className="text-xs text-gray-400 dark:text-gray-500 truncate flex items-center mt-1">
+                                    <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
+                                    {[profileData.city, profileData.country].filter(Boolean).join(', ') || 'Location not set'}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Wallet Balance */}
+                    {profileData?.wallet && (
+                        <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-green-200 dark:border-green-800">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">Wallet Balance</p>
+                                    <p className="text-sm font-bold text-gray-900 dark:text-white">
+                                        {profileData.wallet.balance} {profileData.wallet.currency}
+                                    </p>
+                                </div>
+                                <CreditCard className="w-5 h-5 text-green-600 dark:text-green-400" />
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 {/* Header */}
                 <header className="p-4 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex items-center h-10 justify-start px-4">

@@ -29,6 +29,7 @@ export async function makeAuthenticatedRequest(
     try {
         const cookieStore = await cookies();
         const accessToken = cookieStore.get("accessToken")?.value;
+        const refreshToken = cookieStore.get("refreshToken")?.value;
 
         const doFetch = async (token?: string) => {
             return fetch(url, {
@@ -42,36 +43,31 @@ export async function makeAuthenticatedRequest(
             });
         };
 
+        if (!accessToken && refreshToken) {
+            const newAccessToken = await refreshAccessToken(refreshToken);
+            if (newAccessToken) {
+                const response = await doFetch(newAccessToken);
+                return { response, newAccessToken };
+            }
+            const response = await doFetch();
+            return { response };
+        }
+
         let response = await doFetch(accessToken);
 
         if (response.status !== 401) {
             return { response };
         }
 
-        const refreshToken = cookieStore.get("refreshToken")?.value;
-        if (!refreshToken) {
-            return { response };
+        if (refreshToken) {
+            const newAccessToken = await refreshAccessToken(refreshToken);
+            if (newAccessToken) {
+                response = await doFetch(newAccessToken);
+                return { response, newAccessToken };
+            }
         }
 
-        const refreshResponse = await fetch(AUTH_URLS.REFRESH, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ refresh: refreshToken }),
-        });
-
-        if (!refreshResponse.ok) {
-            return { response };
-        }
-
-        const refreshData = await refreshResponse.json();
-        const newAccessToken = refreshData?.data?.tokens?.access || refreshData?.access;
-
-        if (!newAccessToken) {
-            return { response };
-        }
-
-        response = await doFetch(newAccessToken);
-        return { response, newAccessToken };
+        return { response };
     } catch (error) {
         console.error("Error in makeAuthenticatedRequest: ", error);
         throw error;
@@ -98,15 +94,17 @@ export async function makeAuthenticatedApiRequest(
         }
 
         const nextResponse = NextResponse.json(data, { status: response.status });
+
         if (newAccessToken) {
             nextResponse.cookies.set("accessToken", newAccessToken, {
                 httpOnly: true,
-                secure: true,
+                secure: process.env.NODE_ENV === "production",
                 sameSite: "lax",
                 path: "/",
                 maxAge: 15 * 60,
             });
         }
+
         return nextResponse;
     } catch (error: any) {
         console.error("Error in makeAuthenticatedApiRequest:", error);

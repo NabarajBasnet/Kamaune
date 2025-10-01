@@ -3,13 +3,16 @@
 import { TbLayoutSidebarRightCollapse, TbLayoutSidebarLeftCollapse } from "react-icons/tb";
 import { useDispatch, useSelector } from "react-redux";
 import { toggleSidebar } from "@/states/store/slicer";
-import { Sun, Moon, User, ChevronDown, CheckCircle, Info, AlertCircle, DollarSignIcon, Bell } from "lucide-react";
+import { Sun, Moon, User, ChevronDown, CheckCircle, Info, AlertCircle, DollarSignIcon, Bell, LogOut, Settings, CreditCard, User as UserIcon, Mail, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from 'next/navigation';
 import { useRef } from "react";
 import MobileSidebar from "./MobileSidebar";
 import ThemeToggleButton from "./ThemeToggle";
 import { RootState } from "@/states/store";
+import { useQuery } from "@tanstack/react-query";
+import { getProfileData } from "@/services/userprofiles/userprofile.service";
+import { UserProfile } from "@/types/profile";
 
 const Header = () => {
     const dispatch = useDispatch();
@@ -24,16 +27,27 @@ const Header = () => {
 
     const handleNavigation = (path: string) => {
         router.push(path);
+        setShowProfile(false);
     };
 
-    function getInitials(name: string | undefined) {
-        if (!name) return 'U';
-        return name
-            .split(' ')
-            .map(word => word[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
+    // Get profile data with proper typing
+    const { data, isLoading } = useQuery({
+        queryKey: ['profile'],
+        queryFn: () => getProfileData()
+    });
+
+    console.log("Data: ", data)
+
+    const profileData: UserProfile | null = data?.data?.results?.[0] || null;
+
+    function getInitials(user: { first_name: string; last_name: string } | undefined) {
+        if (!user) return 'U';
+        return `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase();
+    }
+
+    function getFullName(user: { first_name: string; last_name: string } | undefined) {
+        if (!user) return 'User';
+        return `${user.first_name} ${user.last_name}`.trim();
     }
 
     // Close dropdowns when clicking outside
@@ -41,6 +55,9 @@ const Header = () => {
         const handleClickOutside = (event: any) => {
             if (profileRef.current && !(profileRef.current as any).contains(event.target)) {
                 setShowProfile(false);
+            }
+            if (notificationRef.current && !(notificationRef.current as any).contains(event.target)) {
+                setShowNotifications(false);
             }
         };
 
@@ -111,7 +128,7 @@ const Header = () => {
                     )}
                 </button>
 
-                <MobileSidebar />
+                <MobileSidebar profileData={profileData} />
             </div>
 
             <div className="flex items-center space-x-4">
@@ -129,10 +146,10 @@ const Header = () => {
 
                     {/* Notifications Dropdown */}
                     {showNotifications && (
-                        <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
-                            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-                                <h3 className="text-sm font-medium text-gray-900">Notifications</h3>
-                                <span className="text-xs text-gray-500">
+                        <div className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50">
+                            <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                                <h3 className="text-sm font-medium text-gray-900 dark:text-white">Notifications</h3>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
                                     {notifications.filter(n => n.unread).length} unread
                                 </span>
                             </div>
@@ -140,29 +157,29 @@ const Header = () => {
                                 {notifications.map((notification) => (
                                     <div
                                         key={notification.id}
-                                        className={`p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors duration-200 cursor-pointer ${notification.unread ? 'bg-green-50/50' : ''
+                                        className={`p-4 border-b border-gray-50 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 cursor-pointer ${notification.unread ? 'bg-green-50/50 dark:bg-green-900/20' : ''
                                             }`}
                                     >
                                         <div className="flex items-start space-x-3">
-                                            <div className={`p-1.5 rounded-lg ${notification.type === 'success' ? 'bg-green-100 text-green-600' :
-                                                notification.type === 'warning' ? 'bg-yellow-100 text-yellow-600' :
-                                                    'bg-blue-100 text-blue-600'
+                                            <div className={`p-1.5 rounded-lg ${notification.type === 'success' ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300' :
+                                                notification.type === 'warning' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-300' :
+                                                    'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
                                                 }`}>
                                                 <notification.icon className="h-4 w-4" />
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center justify-between">
-                                                    <p className="text-sm font-medium text-gray-900 truncate">
+                                                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                                                         {notification.title}
                                                     </p>
                                                     {notification.unread && (
                                                         <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0 ml-2"></div>
                                                     )}
                                                 </div>
-                                                <p className="text-sm text-gray-600 mt-1">
+                                                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                                                     {notification.message}
                                                 </p>
-                                                <p className="text-xs text-gray-400 mt-1">
+                                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                                                     {notification.time}
                                                 </p>
                                             </div>
@@ -170,13 +187,13 @@ const Header = () => {
                                     </div>
                                 ))}
                             </div>
-                            <div className="p-3 border-t border-gray-100">
+                            <div className="p-3 border-t border-gray-100 dark:border-gray-700">
                                 <button
                                     onClick={() => {
                                         handleNavigation('/notifications');
                                         setShowNotifications(false);
                                     }}
-                                    className="w-full text-center text-sm text-green-600 hover:text-green-700 font-medium"
+                                    className="w-full text-center text-sm text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 font-medium"
                                 >
                                     View All Notifications
                                 </button>
@@ -194,14 +211,119 @@ const Header = () => {
                         onClick={() => setShowProfile(!showProfile)}
                         className="flex items-center space-x-2 cursor-pointer"
                     >
-                        <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-medium">
-                            {getInitials('Admin')}
-                        </div>
+                        {profileData?.profile_picture ? (
+                            <img
+                                src={profileData.profile_picture}
+                                alt={getFullName(profileData.user)}
+                                className="w-8 h-8 rounded-full object-cover border-2 border-green-500"
+                            />
+                        ) : (
+                            <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-medium">
+                                {getInitials(profileData?.user)}
+                            </div>
+                        )}
                         <ChevronDown
                             className={`w-4 h-4 text-gray-600 dark:text-gray-300 transition-transform duration-200 ${showProfile ? 'rotate-180' : ''
                                 }`}
                         />
                     </button>
+
+                    {/* Profile Dropdown */}
+                    {showProfile && (
+                        <div className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50">
+                            {/* Profile Header */}
+                            <div className="p-4 border-b border-gray-100 dark:border-gray-700">
+                                <div className="flex items-center space-x-3">
+                                    {profileData?.profile_picture ? (
+                                        <img
+                                            src={profileData.profile_picture}
+                                            alt={getFullName(profileData.user)}
+                                            className="w-12 h-12 rounded-full object-cover border-2 border-green-500"
+                                        />
+                                    ) : (
+                                        <div className="w-12 h-12 rounded-full bg-green-500 text-white flex items-center justify-center text-lg font-medium">
+                                            {getInitials(profileData?.user)}
+                                        </div>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                                            {getFullName(profileData?.user)}
+                                        </h3>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate flex items-center">
+                                            <Mail className="w-3 h-3 mr-1" />
+                                            {profileData?.user.email}
+                                        </p>
+                                        {profileData?.city && (
+                                            <p className="text-xs text-gray-400 dark:text-gray-500 truncate flex items-center mt-1">
+                                                <MapPin className="w-3 h-3 mr-1" />
+                                                {profileData.city}
+                                                {profileData.country && `, ${profileData.country}`}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Wallet Balance */}
+                            {profileData?.wallet && (
+                                <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">Wallet Balance</p>
+                                            <p className="text-lg font-bold text-gray-900 dark:text-white">
+                                                {profileData.wallet.balance} {profileData.wallet.currency}
+                                            </p>
+                                        </div>
+                                        <CreditCard className="w-8 h-8 text-green-600 dark:text-green-400" />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Menu Items */}
+                            <div className="p-2">
+                                <button
+                                    onClick={() => handleNavigation('/profile')}
+                                    className="w-full flex items-center space-x-3 p-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                                >
+                                    <UserIcon className="w-4 h-4" />
+                                    <span>View Profile</span>
+                                </button>
+
+                                <button
+                                    onClick={() => handleNavigation('/settings')}
+                                    className="w-full flex items-center space-x-3 p-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                                >
+                                    <Settings className="w-4 h-4" />
+                                    <span>Settings</span>
+                                </button>
+
+                                {profileData?.wallet && (
+                                    <button
+                                        onClick={() => handleNavigation('/wallet')}
+                                        className="w-full flex items-center space-x-3 p-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                                    >
+                                        <CreditCard className="w-4 h-4" />
+                                        <span>Wallet & Payments</span>
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Footer */}
+                            <div className="p-2 border-t border-gray-100 dark:border-gray-700">
+                                <button
+                                    onClick={() => {
+                                        // Add logout logic here
+                                        console.log('Logout clicked');
+                                        setShowProfile(false);
+                                    }}
+                                    className="w-full flex items-center space-x-3 p-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                    <span>Sign Out</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
