@@ -11,6 +11,9 @@ export const getProfileData = async () => {
 
 export const updateUserProfile = async (id: number, payload: FormData) => {
     try {
+
+        console.log('Payload: ', payload);
+
         const response = await fetch(`/api/profile/userprofile?id=${id}`, {
             method: 'PUT',
             body: payload,

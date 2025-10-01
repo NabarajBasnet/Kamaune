@@ -62,3 +62,14 @@ export type UserProfileApiItem = {
     };
     wallet: any | null;
 }
+
+export interface ProfileFormData {
+    address_line_1: string;
+    address_line_2: string;
+    city: string;
+    province: string;
+    country: string;
+    facebook: string;
+    instagram: string;
+    profile_picture_base64?: string;
+}

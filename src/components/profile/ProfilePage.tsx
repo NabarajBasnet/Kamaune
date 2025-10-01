@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
 import {
     User,
     Edit,
     Camera,
     Briefcase,
-    AlertCircle,
     Loader2,
     Share2,
     ExternalLink,
@@ -17,6 +17,8 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getProfileData, updateUserProfile } from "@/services/userprofiles/userprofile.service";
 import { UserProfileApiItem } from "@/types/profile";
+import { ProfileFormData } from "@/types/profile";
+
 type ActiveTab = "profile" | "business" | "social";
 
 // Business Type mapping
@@ -32,28 +34,27 @@ const businessTypes: Record<number, string> = {
 export function Profile() {
     const [activeTab, setActiveTab] = useState<ActiveTab>("profile");
     const [isEditing, setIsEditing] = useState(false);
-    const [formData, setFormData] = useState({
-        address_line_1: "",
-        address_line_2: "",
-        city: "",
-        province: "",
-        country: "",
-        facebook: "",
-        instagram: "",
-    });
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [profileData, setProfileData] = useState<UserProfileApiItem | null>(null);
-    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
 
     const { data, isLoading: isProfileLoading } = useQuery({
         queryKey: ['profile'],
         queryFn: () => getProfileData()
-    })
-
-    console.log("Data: ", data);
+    });
 
     const queryClient = useQueryClient();
+
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors },
+        setValue,
+        watch,
+    } = useForm<ProfileFormData>();
 
     // Simulate loading state
     useEffect(() => {
@@ -68,13 +69,15 @@ export function Profile() {
     useEffect(() => {
         const apiItem: UserProfileApiItem | undefined = data?.data?.results?.[0];
         if (!apiItem) return;
+
         setProfileData(apiItem);
 
         // Derive social links if provided
         const facebookLink = apiItem.social?.find(s => (s.platform || '').toLowerCase() === 'facebook' || (s.url || '').includes('facebook'))?.url || "";
         const instagramLink = apiItem.social?.find(s => (s.platform || '').toLowerCase() === 'instagram' || (s.url || '').includes('instagram'))?.url || "";
 
-        setFormData({
+        // Reset form with API data
+        reset({
             address_line_1: apiItem.address_line_1 || "",
             address_line_2: apiItem.address_line_2 || "",
             city: apiItem.city || "",
@@ -83,7 +86,38 @@ export function Profile() {
             facebook: facebookLink,
             instagram: instagramLink,
         });
-    }, [data]);
+
+        // Set image preview if profile picture exists
+        if (apiItem.profile_picture) {
+            setImagePreview(apiItem.profile_picture);
+        }
+    }, [data, reset]);
+
+    // Convert image to base64
+    const convertToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = error => reject(error);
+        });
+    };
+
+    // Handle image selection
+    const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setSelectedImageFile(file);
+
+        try {
+            const base64 = await convertToBase64(file);
+            setImagePreview(base64);
+            setValue('profile_picture_base64', base64);
+        } catch (error) {
+            console.error("Error converting image to base64:", error);
+        }
+    };
 
     const getInitials = (name: string) => {
         return name
@@ -98,28 +132,25 @@ export function Profile() {
         return businessTypes[typeId] || "Other";
     };
 
-    // Handle form input changes
-    const handleInputChange = (
-        field: keyof typeof formData,
-        value: string | number
-    ) => {
-        setFormData((prev) => ({ ...prev, [field]: value }));
-    };
-
     // Handle save profile
-    const handleSaveProfile = async () => {
+    const onSubmit = async (formData: ProfileFormData) => {
         setIsSaving(true);
         try {
             if (!profileData?.id) throw new Error('Profile not loaded');
 
-            const payload = new FormData();
-            Object.entries(formData).forEach(([key, value]) => {
-                if (value !== undefined && value !== null && String(value).trim() !== "") {
-                    payload.append(key, String(value));
+            // Prepare payload - remove empty strings and undefined values
+            const payload: any = {};
+
+            Object.keys(formData).forEach(key => {
+                const value = formData[key as keyof ProfileFormData];
+                if (value !== undefined && value !== null && value !== "") {
+                    payload[key] = value;
                 }
             });
-            if (selectedImage) {
-                payload.append('profile_picture', selectedImage);
+
+            // Remove the base64 field if no new image was selected
+            if (!selectedImageFile) {
+                delete payload.profile_picture_base64;
             }
 
             const updated = await updateUserProfile(profileData.id, payload);
@@ -127,15 +158,49 @@ export function Profile() {
             const updatedItem: UserProfileApiItem | undefined = updated?.data || updated;
             if (updatedItem && updatedItem.id) {
                 setProfileData(updatedItem);
+                if (updatedItem.profile_picture) {
+                    setImagePreview(updatedItem.profile_picture);
+                }
             } else {
                 await queryClient.invalidateQueries({ queryKey: ['profile'] });
             }
 
+            setSelectedImageFile(null);
             setIsEditing(false);
         } catch (error) {
             console.error("Failed to save profile:", error);
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    // Handle cancel editing
+    const handleCancel = () => {
+        setIsEditing(false);
+        setSelectedImageFile(null);
+
+        // Reset image preview to original profile picture
+        if (profileData?.profile_picture) {
+            setImagePreview(profileData.profile_picture);
+        } else {
+            setImagePreview(null);
+        }
+
+        // Reset form to original values
+        const apiItem: UserProfileApiItem | undefined = data?.data?.results?.[0];
+        if (apiItem) {
+            const facebookLink = apiItem.social?.find(s => (s.platform || '').toLowerCase() === 'facebook' || (s.url || '').includes('facebook'))?.url || "";
+            const instagramLink = apiItem.social?.find(s => (s.platform || '').toLowerCase() === 'instagram' || (s.url || '').includes('instagram'))?.url || "";
+
+            reset({
+                address_line_1: apiItem.address_line_1 || "",
+                address_line_2: apiItem.address_line_2 || "",
+                city: apiItem.city || "",
+                province: apiItem.province || "",
+                country: apiItem.country || "",
+                facebook: facebookLink,
+                instagram: instagramLink,
+            });
         }
     };
 
@@ -161,7 +226,7 @@ export function Profile() {
         <div className="w-full min-h-screen dark:bg-slate-950">
             <div className="w-full">
                 {/* Header Section */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                     <div className="flex-1">
                         <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2">
                             Profile Management
@@ -173,11 +238,11 @@ export function Profile() {
                 </div>
 
                 {/* Simplified Tab Navigation */}
-                <div className="flex justify-center sm:justify-start mb-8">
+                <div className="flex justify-center sm:justify-start mb-4">
                     <div className="flex gap-1 p-1 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
                         <button
                             onClick={() => setActiveTab("profile")}
-                            className={`relative flex items-center gap-3 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${activeTab === "profile"
+                            className={`relative cursor-pointer flex items-center gap-3 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${activeTab === "profile"
                                 ? "bg-emerald-600 text-white shadow-md"
                                 : "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-700/50 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                                 }`}
@@ -187,7 +252,7 @@ export function Profile() {
                         </button>
                         <button
                             onClick={() => setActiveTab("business")}
-                            className={`relative flex items-center gap-3 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${activeTab === "business"
+                            className={`relative cursor-pointer flex items-center gap-3 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${activeTab === "business"
                                 ? "bg-emerald-600 text-white shadow-md"
                                 : "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-700/50 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                                 }`}
@@ -197,7 +262,7 @@ export function Profile() {
                         </button>
                         <button
                             onClick={() => setActiveTab("social")}
-                            className={`relative flex items-center gap-3 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${activeTab === "social"
+                            className={`relative cursor-pointer flex items-center gap-3 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${activeTab === "social"
                                 ? "bg-emerald-600 text-white shadow-md"
                                 : "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-700/50 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                                 }`}
@@ -220,7 +285,7 @@ export function Profile() {
                                         </h2>
                                         <button
                                             onClick={() => setIsEditing(!isEditing)}
-                                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${isEditing
+                                            className={`flex cursor-pointer items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${isEditing
                                                 ? "bg-gray-500 hover:bg-gray-600 text-white"
                                                 : "bg-emerald-600 hover:bg-emerald-700 text-white"
                                                 }`}
@@ -239,169 +304,184 @@ export function Profile() {
                                         </button>
                                     </div>
 
-                                    <div className="flex flex-col lg:flex-row gap-8">
-                                        {/* Profile Picture */}
-                                        <div className="flex flex-col items-center space-y-4">
-                                            <div className="relative">
-                                                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-4xl font-bold text-white overflow-hidden border-4 border-emerald-500">
-                                                    {profileData?.profile_picture ? (
-                                                        <img
-                                                            src={profileData.profile_picture}
-                                                            alt="Profile Picture"
-                                                            className="w-full h-full object-cover"
-                                                            onError={(e) => {
-                                                                e.currentTarget.style.display = "none";
-                                                            }}
-                                                        />
-                                                    ) : (
-                                                        <>
-                                                            {profileData?.user?.first_name?.charAt(0)?.toUpperCase() || 'U'}
-                                                        </>
+                                    <form onSubmit={handleSubmit(onSubmit)}>
+                                        <div className="flex flex-col lg:flex-row gap-8">
+                                            {/* Profile Picture */}
+                                            <div className="flex flex-col items-center space-y-4">
+                                                <div className="relative">
+                                                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-4xl font-bold text-white overflow-hidden border-4 border-emerald-500">
+                                                        {imagePreview ? (
+                                                            <img
+                                                                src={imagePreview}
+                                                                alt="Profile Picture"
+                                                                className="w-full h-full object-cover"
+                                                                onError={(e) => {
+                                                                    e.currentTarget.style.display = "none";
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <>
+                                                                {profileData?.user?.first_name?.charAt(0)?.toUpperCase() || 'U'}
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                    {isEditing && (
+                                                        <label className="absolute bottom-0 right-0 bg-emerald-500 hover:bg-emerald-600 p-2 rounded-full transition-colors cursor-pointer">
+                                                            <Camera className="w-4 h-4 text-white" />
+                                                            <input
+                                                                type="file"
+                                                                accept="image/*"
+                                                                className="hidden"
+                                                                onChange={handleImageSelect}
+                                                            />
+                                                        </label>
                                                     )}
                                                 </div>
-                                                {isEditing && (
-                                                    <label className="absolute bottom-0 right-0 bg-emerald-500 hover:bg-emerald-600 p-2 rounded-full transition-colors cursor-pointer">
-                                                        <Camera className="w-4 h-4 text-white" />
-                                                        <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                                                            const file = e.target.files?.[0] || null;
-                                                            setSelectedImage(file);
-                                                        }} />
-                                                    </label>
+                                                {isEditing && selectedImageFile && (
+                                                    <span className="text-emerald-600 text-sm font-medium">
+                                                        {selectedImageFile.name}
+                                                    </span>
                                                 )}
                                             </div>
-                                            {isEditing && selectedImage && (
-                                                <span className="text-emerald-600 text-sm font-medium">{selectedImage.name}</span>
-                                            )}
-                                        </div>
 
-                                        {/* Profile Form */}
-                                        <div className="flex-1">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                        First Name
-                                                    </label>
-                                                    <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
-                                                        {profileData?.user?.first_name || '-'}
-                                                    </p>
-                                                </div>
-
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                        Last Name
-                                                    </label>
-                                                    <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
-                                                        {profileData?.user?.last_name || '-'}
-                                                    </p>
-                                                </div>
-
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                        City
-                                                    </label>
-                                                    {isEditing ? (
-                                                        <input
-                                                            type="text"
-                                                            value={formData.city}
-                                                            onChange={(e) =>
-                                                                handleInputChange("city", e.target.value)
-                                                            }
-                                                            className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                                                        />
-                                                    ) : (
+                                            {/* Profile Form */}
+                                            <div className="flex-1">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                            First Name
+                                                        </label>
                                                         <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
-                                                            {profileData?.city || '-'}
+                                                            {profileData?.user?.first_name || '-'}
                                                         </p>
-                                                    )}
-                                                </div>
+                                                    </div>
 
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                        Province/State
-                                                    </label>
-                                                    {isEditing ? (
-                                                        <input
-                                                            type="text"
-                                                            value={formData.province}
-                                                            onChange={(e) =>
-                                                                handleInputChange("province", e.target.value)
-                                                            }
-                                                            className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                                                        />
-                                                    ) : (
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                            Last Name
+                                                        </label>
                                                         <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
-                                                            {profileData?.province || '-'}
+                                                            {profileData?.user?.last_name || '-'}
                                                         </p>
-                                                    )}
-                                                </div>
+                                                    </div>
 
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                        Country
-                                                    </label>
-                                                    {isEditing ? (
-                                                        <input type="text" value={formData.country} onChange={(e) => handleInputChange("country", e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
-                                                    ) : (
-                                                        <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
-                                                            {profileData?.country || '-'}
-                                                        </p>
-                                                    )}
-                                                </div>
-
-                                                <div className="md:col-span-2">
-                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                        Address Line 1
-                                                    </label>
-                                                    {isEditing ? (
-                                                        <input type="text" value={formData.address_line_1} onChange={(e) => handleInputChange("address_line_1", e.target.value)} placeholder="Street address, P.O. box" className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
-                                                    ) : (
-                                                        <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
-                                                            {profileData?.address_line_1 || '—'}
-                                                        </p>
-                                                    )}
-                                                </div>
-
-                                                <div className="md:col-span-2">
-                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                        Address Line 2
-                                                    </label>
-                                                    {isEditing ? (
-                                                        <input type="text" value={formData.address_line_2} onChange={(e) => handleInputChange("address_line_2", e.target.value)} placeholder="Apartment, suite, unit, building, floor, etc." className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
-                                                    ) : (
-                                                        <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
-                                                            {profileData?.address_line_2 || '—'}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {isEditing && (
-                                                <div className="flex gap-4 mt-8">
-                                                    <button
-                                                        onClick={handleSaveProfile}
-                                                        disabled={isSaving}
-                                                        className="flex-1 bg-emerald-600 text-white py-3 px-6 rounded-lg hover:bg-emerald-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                                    >
-                                                        {isSaving ? (
-                                                            <>
-                                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                                                Saving...
-                                                            </>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                            City
+                                                        </label>
+                                                        {isEditing ? (
+                                                            <input
+                                                                type="text"
+                                                                {...register("city")}
+                                                                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                                                            />
                                                         ) : (
-                                                            "Save Changes"
+                                                            <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
+                                                                {profileData?.city || '-'}
+                                                            </p>
                                                         )}
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setIsEditing(false)}
-                                                        disabled={isSaving}
-                                                        className="flex-1 bg-gray-500 text-white py-3 px-6 rounded-lg hover:bg-gray-600 transition-colors font-medium disabled:opacity-50"
-                                                    >
-                                                        Cancel
-                                                    </button>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                            Province/State
+                                                        </label>
+                                                        {isEditing ? (
+                                                            <input
+                                                                type="text"
+                                                                {...register("province")}
+                                                                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                                                            />
+                                                        ) : (
+                                                            <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
+                                                                {profileData?.province || '-'}
+                                                            </p>
+                                                        )}
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                            Country
+                                                        </label>
+                                                        {isEditing ? (
+                                                            <input
+                                                                type="text"
+                                                                {...register("country")}
+                                                                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                                                            />
+                                                        ) : (
+                                                            <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
+                                                                {profileData?.country || '-'}
+                                                            </p>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="md:col-span-2">
+                                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                            Address Line 1
+                                                        </label>
+                                                        {isEditing ? (
+                                                            <input
+                                                                type="text"
+                                                                {...register("address_line_1")}
+                                                                placeholder="Street address, P.O. box"
+                                                                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                                                            />
+                                                        ) : (
+                                                            <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
+                                                                {profileData?.address_line_1 || '—'}
+                                                            </p>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="md:col-span-2">
+                                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                            Address Line 2
+                                                        </label>
+                                                        {isEditing ? (
+                                                            <input
+                                                                type="text"
+                                                                {...register("address_line_2")}
+                                                                placeholder="Apartment, suite, unit, building, floor, etc."
+                                                                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                                                            />
+                                                        ) : (
+                                                            <p className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white font-medium">
+                                                                {profileData?.address_line_2 || '—'}
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            )}
+
+                                                {isEditing && (
+                                                    <div className="flex gap-4 mt-8">
+                                                        <button
+                                                            type="submit"
+                                                            disabled={isSaving}
+                                                            className="flex-1 cursor-pointer bg-emerald-600 text-white py-3 px-6 rounded-lg hover:bg-emerald-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                                        >
+                                                            {isSaving ? (
+                                                                <>
+                                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                                    Saving...
+                                                                </>
+                                                            ) : (
+                                                                "Save Changes"
+                                                            )}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleCancel}
+                                                            disabled={isSaving}
+                                                            className="flex-1 cursor-pointer bg-gray-500 text-white py-3 px-6 rounded-lg hover:bg-gray-600 transition-colors font-medium disabled:opacity-50"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
+                                    </form>
                                 </div>
                             </div>
                         )}
@@ -480,11 +560,11 @@ export function Profile() {
                                     </div>
 
                                     {isEditing && (
-                                        <div className="flex gap-4 mt-8">
+                                        <form onSubmit={handleSubmit(onSubmit)} className="flex gap-4 mt-8">
                                             <button
-                                                onClick={handleSaveProfile}
+                                                type="submit"
                                                 disabled={isSaving}
-                                                className="flex-1 bg-emerald-600 text-white py-3 px-6 rounded-lg hover:bg-emerald-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                                className="flex-1 cursor-pointer bg-emerald-600 text-white py-3 px-6 rounded-lg hover:bg-emerald-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                             >
                                                 {isSaving ? (
                                                     <>
@@ -496,13 +576,14 @@ export function Profile() {
                                                 )}
                                             </button>
                                             <button
-                                                onClick={() => setIsEditing(false)}
+                                                type="button"
+                                                onClick={handleCancel}
                                                 disabled={isSaving}
-                                                className="flex-1 bg-gray-500 text-white py-3 px-6 rounded-lg hover:bg-gray-600 transition-colors font-medium disabled:opacity-50"
+                                                className="flex-1 cursor-pointer bg-gray-500 text-white py-3 px-6 rounded-lg hover:bg-gray-600 transition-colors font-medium disabled:opacity-50"
                                             >
                                                 Cancel
                                             </button>
-                                        </div>
+                                        </form>
                                     )}
                                 </div>
                             </div>
@@ -536,123 +617,120 @@ export function Profile() {
                                         </button>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <div>
-                                            <div className="flex items-center gap-3 mb-4">
-                                                <div className="p-2 bg-blue-500 rounded-lg">
-                                                    <Facebook className="w-5 h-5 text-white" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="font-semibold text-gray-900 dark:text-white">
-                                                        Facebook
-                                                    </h3>
-                                                    <p className="text-sm text-gray-500">
-                                                        Connect your Facebook page
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            {isEditing ? (
-                                                <input
-                                                    type="url"
-                                                    value={formData.facebook}
-                                                    onChange={(e) =>
-                                                        handleInputChange("facebook", e.target.value)
-                                                    }
-                                                    placeholder="https://facebook.com/yourpage"
-                                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                />
-                                            ) : (
-                                                <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                                                    {formData.facebook ? (
-                                                        <a
-                                                            href={formData.facebook}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2"
-                                                        >
-                                                            <ExternalLink className="w-4 h-4" />
-                                                            View Facebook Page
-                                                        </a>
-                                                    ) : (
-                                                        <p className="text-gray-500">
-                                                            No Facebook page connected
+                                    <form onSubmit={handleSubmit(onSubmit)}>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <div>
+                                                <div className="flex items-center gap-3 mb-4">
+                                                    <div className="p-2 bg-blue-500 rounded-lg">
+                                                        <Facebook className="w-5 h-5 text-white" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                                                            Facebook
+                                                        </h3>
+                                                        <p className="text-sm text-gray-500">
+                                                            Connect your Facebook page
                                                         </p>
-                                                    )}
+                                                    </div>
                                                 </div>
-                                            )}
-                                        </div>
-
-                                        <div>
-                                            <div className="flex items-center gap-3 mb-4">
-                                                <div className="p-2 bg-pink-500 rounded-lg">
-                                                    <Instagram className="w-5 h-5 text-white" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="font-semibold text-gray-900 dark:text-white">
-                                                        Instagram
-                                                    </h3>
-                                                    <p className="text-sm text-gray-500">
-                                                        Link your Instagram profile
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            {isEditing ? (
-                                                <input
-                                                    type="url"
-                                                    value={formData.instagram}
-                                                    onChange={(e) =>
-                                                        handleInputChange("instagram", e.target.value)
-                                                    }
-                                                    placeholder="https://instagram.com/yourusername"
-                                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                                                />
-                                            ) : (
-                                                <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                                                    {formData.instagram ? (
-                                                        <a
-                                                            href={formData.instagram}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-pink-600 hover:text-pink-700 font-medium flex items-center gap-2"
-                                                        >
-                                                            <ExternalLink className="w-4 h-4" />
-                                                            View Instagram Profile
-                                                        </a>
-                                                    ) : (
-                                                        <p className="text-gray-500">
-                                                            No Instagram profile connected
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {isEditing && (
-                                        <div className="flex gap-4 mt-8">
-                                            <button
-                                                onClick={handleSaveProfile}
-                                                disabled={isSaving}
-                                                className="flex-1 bg-emerald-600 text-white py-3 px-6 rounded-lg hover:bg-emerald-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                            >
-                                                {isSaving ? (
-                                                    <>
-                                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                                        Saving...
-                                                    </>
+                                                {isEditing ? (
+                                                    <input
+                                                        type="url"
+                                                        {...register("facebook")}
+                                                        placeholder="https://facebook.com/yourpage"
+                                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                    />
                                                 ) : (
-                                                    "Save Changes"
+                                                    <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                                        {watch("facebook") ? (
+                                                            <a
+                                                                href={watch("facebook")}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2"
+                                                            >
+                                                                <ExternalLink className="w-4 h-4" />
+                                                                View Facebook Page
+                                                            </a>
+                                                        ) : (
+                                                            <p className="text-gray-500">
+                                                                No Facebook page connected
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 )}
-                                            </button>
-                                            <button
-                                                onClick={() => setIsEditing(false)}
-                                                disabled={isSaving}
-                                                className="flex-1 bg-gray-500 text-white py-3 px-6 rounded-lg hover:bg-gray-600 transition-colors font-medium disabled:opacity-50"
-                                            >
-                                                Cancel
-                                            </button>
+                                            </div>
+
+                                            <div>
+                                                <div className="flex items-center gap-3 mb-4">
+                                                    <div className="p-2 bg-pink-500 rounded-lg">
+                                                        <Instagram className="w-5 h-5 text-white" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                                                            Instagram
+                                                        </h3>
+                                                        <p className="text-sm text-gray-500">
+                                                            Link your Instagram profile
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {isEditing ? (
+                                                    <input
+                                                        type="url"
+                                                        {...register("instagram")}
+                                                        placeholder="https://instagram.com/yourusername"
+                                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                                    />
+                                                ) : (
+                                                    <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                                        {watch("instagram") ? (
+                                                            <a
+                                                                href={watch("instagram")}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-pink-600 hover:text-pink-700 font-medium flex items-center gap-2"
+                                                            >
+                                                                <ExternalLink className="w-4 h-4" />
+                                                                View Instagram Profile
+                                                            </a>
+                                                        ) : (
+                                                            <p className="text-gray-500">
+                                                                No Instagram profile connected
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    )}
+
+                                        {isEditing && (
+                                            <div className="flex gap-4 mt-8">
+                                                <button
+                                                    type="submit"
+                                                    disabled={isSaving}
+                                                    className="flex-1 cursor-pointer bg-emerald-600 text-white py-3 px-6 rounded-lg hover:bg-emerald-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                                >
+                                                    {isSaving ? (
+                                                        <>
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                            Saving...
+                                                        </>
+                                                    ) : (
+                                                        "Save Changes"
+                                                    )}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCancel}
+                                                    disabled={isSaving}
+                                                    className="flex-1 cursor-pointer bg-gray-500 text-white py-3 px-6 rounded-lg hover:bg-gray-600 transition-colors font-medium disabled:opacity-50"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        )}
+                                    </form>
                                 </div>
                             </div>
                         )}
