@@ -39,7 +39,7 @@ interface ProfileFormProps {
 
 const ProfileForm = ({ isOpen, onClose, initialData }: ProfileFormProps) => {
 
-    console.log("Initial data: ", initialData);
+    // console.log("Initial data: ", initialData);
 
     const [activeTab, setActiveTab] = useState<ActiveTab>("profile");
     const [isSaving, setIsSaving] = useState(false);
@@ -111,39 +111,26 @@ const ProfileForm = ({ isOpen, onClose, initialData }: ProfileFormProps) => {
     };
 
     // Handle save profile
-    const onSubmit = async (formData: ProfileFormData) => {
+    const onSubmit = async (data: ProfileFormData) => {
         setIsSaving(true);
         try {
-            if (!initialData?.id) throw new Error('Profile not loaded');
+            // console.log("Data: ", data)
+            const { address_line_1, address_line_2, city, province, country, facebook, instagram, profile_picture_base64 } = data;
 
-            // Prepare payload - remove empty strings and undefined values
-            const payload: any = {};
+            const payload = {
+                address_line_1: address_line_1,
+                address_line_2: address_line_2,
+                city: city,
+                province: province,
+                country: country,
+                facebook: facebook,
+                instagram: instagram,
+                profile_picture: profile_picture_base64
+            };
 
-            Object.keys(formData).forEach(key => {
-                const value = formData[key as keyof ProfileFormData];
-                if (value !== undefined && value !== null && value !== "") {
-                    payload[key] = value;
-                }
-            });
+            const response = await updateUserProfile(initialData?.id, payload);
+            console.log("Response: ", response)
 
-            // Remove the base64 field if no new image was selected
-            if (!selectedImageFile) {
-                delete payload.profile_picture_base64;
-            }
-
-            const updated = await updateUserProfile(initialData.id, payload);
-
-            const updatedItem: UserProfileApiItem | undefined = updated?.data || updated;
-            if (updatedItem && updatedItem.id) {
-                if (updatedItem.profile_picture) {
-                    setImagePreview(updatedItem.profile_picture);
-                }
-            } else {
-                await queryClient.invalidateQueries({ queryKey: ['profile'] });
-            }
-
-            setSelectedImageFile(null);
-            onClose();
         } catch (error) {
             console.error("Failed to save profile:", error);
         } finally {
