@@ -34,11 +34,11 @@ interface ProductModalProps {
 }
 
 interface Photo {
-    id: string;
-    url: string;
+    id?: string;
+    url?: string;
     alt: string;
     isPrimary: boolean;
-    file?: File;
+    image: string;
 }
 
 export default function ProductAddForm({
@@ -61,13 +61,13 @@ export default function ProductAddForm({
     const [isCompared, setIsCompared] = useState<boolean>(false);
     const [cardType, setCardType] = useState<boolean>(false);
 
-    const [productImage, setProductImage] = useState<File | null>(null);
-    console.log("Product Image: ", productImage);
+    const [productImage, setProductImage] = useState<string>("");
+    // console.log("Product Image: ", productImage);
 
     const [productGallery, setProductGallery] = useState<Photo[]>([]);
-    console.log("Product galary: ", productGallery);
+    // console.log("Product galary: ", productGallery);
     const [imageUrls, setImageUrls] = useState<Photo[]>([]);
-    console.log("Image URLs: ", imageUrls);
+    // console.log("Image URLs: ", imageUrls);
 
     const [isSlugCustomized, setIsSlugCustomized] = useState<boolean>(false);
 
@@ -87,6 +87,33 @@ export default function ProductAddForm({
     const handlePhotosChange = (photos: Photo[]) => {
         setProductGallery(photos);
         setImageUrls(photos);
+    };
+
+    // Convert file to base64
+    const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = error => reject(error);
+        });
+    };
+
+    // Handle main product image selection
+    const handleMainImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        const file = files[0];
+        if (file.type.startsWith('image/')) {
+            try {
+                const base64String = await fileToBase64(file);
+                setProductImage(base64String);
+            } catch (error) {
+                console.error('Error converting main image to base64:', error);
+                toast.error('Error processing image');
+            }
+        }
     };
 
     const [mount, setMount] = useState(false);
@@ -240,9 +267,9 @@ export default function ProductAddForm({
                 merchant: parseInt(selectedMerchant) || null,
                 brand: parseInt(selectedBrand) || null,
                 product_url: data.productUrl,
-                image_url: '',
-                product_galary: [],
-                image_urls: [],
+                image_url: productImage,
+                product_galary: productGallery ? productGallery : [],
+                image_urls: imageUrls ? imageUrls : [],
                 cashback_url: data.productUrl,
                 card_type: cardType,
                 product_label: data.productDescription,
@@ -267,44 +294,13 @@ export default function ProductAddForm({
 
             console.log("Product data: ", productData);
 
-            const formData = new FormData();
-
-            for (const [key, value] of formData.entries()) {
-
-                // Log
-                if (value) {
-                    console.log(key, '=> File', value)
-                } else {
-                    console.log(key, '=>', value)
-                }
-            }
-
-            Object.entries(productData).forEach(([key, value]) => {
-                if (value !== null && value !== undefined) {
-                    formData.append(key, String(value));
-                }
-            });
-
-            if (productImage) {
-                formData.append("image_url", productImage);
-            }
-
-            productGallery.forEach((photo, i) => {
-                formData.append(`product_gallery[${i}]`, photo.file);
-            });
-
-            imageUrls.forEach((photo, i) => {
-                formData.append(`image_urls[${i}]`, photo.url);
-            });
-
-            const response = await fetch("/api/products/create", {
-                method: "POST",
-                body: JSON.stringify(productData),
-            });
+            const response = await CreateProduct(productData);
 
             const result = await response.json();
+            console.log("Result: ", result)
             if (response.ok) {
                 toast.success("Product created successfully!");
+                onClose(); // Close the modal on success
             } else {
                 toast.error(`Error creating product: ${result.message || "Unknown error"}`);
             }
@@ -334,7 +330,7 @@ export default function ProductAddForm({
                 </div>
 
                 {/* Modal Content */}
-                <form onSubmit={handleSubmit(handleOnSubmit)} className="p-8 space-y-8" encType="multipart/form-data">
+                <form onSubmit={handleSubmit(handleOnSubmit)} className="p-8 space-y-8">
                     {/* Basic Product Information */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         <div>
@@ -592,14 +588,20 @@ export default function ProductAddForm({
                             <input
                                 type="file"
                                 accept="image/*"
-                                onChange={(e) => {
-                                    if (e.target.files && e.target.files.length > 0) {
-                                        setProductImage(e.target.files[0]);
-                                    }
-                                }}
+                                onChange={handleMainImageSelect}
                                 className="w-full bg-white dark:bg-gray-700 rounded-lg px-4 py-4 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none border border-gray-300 dark:border-gray-600"
                                 required
                             />
+                            {productImage && (
+                                <div className="mt-2">
+                                    <p className="text-xs text-green-600">Selected Image</p>
+                                    <img
+                                        src={productImage}
+                                        alt="Main product preview"
+                                        className="w-16 h-16 object-cover rounded-md border border-gray-300 mt-2"
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
 

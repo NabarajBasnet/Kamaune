@@ -2,11 +2,11 @@ import { useForm, useFieldArray } from "react-hook-form";
 import React from "react";
 
 interface Photo {
-    id: string;
-    url: string;
+    id?: string;
+    url?: string;
     alt: string;
     isPrimary: boolean;
-    file: File;
+    image: string;
 }
 
 interface FormValues {
@@ -50,8 +50,18 @@ const ProductPhotoManagement = ({ onPhotosChange }: ProductPhotoManagementProps)
         }
     };
 
+    // Convert file to base64
+    const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = error => reject(error);
+        });
+    };
+
     // Handle file selection
-    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (!files) return;
 
@@ -60,20 +70,26 @@ const ProductPhotoManagement = ({ onPhotosChange }: ProductPhotoManagementProps)
 
         if (filesToProcess.length === 0) return;
 
-        filesToProcess.forEach((file, index) => {
+        for (let index = 0; index < filesToProcess.length; index++) {
+            const file = filesToProcess[index];
             if (file.type.startsWith('image/')) {
-                const url = URL.createObjectURL(file);
-                const isFirstPhoto = currentPhotos.length === 0 && index === 0;
+                try {
+                    const base64String = await fileToBase64(file);
+                    const url = URL.createObjectURL(file);
+                    const isFirstPhoto = currentPhotos.length === 0 && index === 0;
 
-                append({
-                    id: Date.now().toString() + index,
-                    url: url,
-                    alt: file.name.split('.')[0] || `Photo ${currentPhotos.length + index + 1}`,
-                    isPrimary: isFirstPhoto,
-                    file: file
-                });
+                    append({
+                        id: Date.now().toString() + index,
+                        url: url,
+                        alt: file.name.split('.')[0] || `Photo ${currentPhotos.length + index + 1}`,
+                        isPrimary: isFirstPhoto,
+                        image: base64String
+                    });
+                } catch (error) {
+                    console.error('Error converting file to base64:', error);
+                }
             }
-        });
+        }
 
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
@@ -194,7 +210,7 @@ const ProductPhotoManagement = ({ onPhotosChange }: ProductPhotoManagementProps)
                                 </td>
                                 <td className="py-3 px-2">
                                     <span className="text-sm text-gray-900 dark:text-white">
-                                        {currentPhotos[index]?.file?.name || 'No file'}
+                                        {currentPhotos[index]?.alt || 'No file'}
                                     </span>
                                 </td>
                                 <td className="py-3 px-2">

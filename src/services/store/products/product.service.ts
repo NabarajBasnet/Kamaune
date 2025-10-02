@@ -14,18 +14,12 @@ export async function GetAllProducts() {
     }
 }
 
-export const CreateProduct = async (formData: FormData) => {
+export const CreateProduct = async (data: any) => {
     try {
-        const response = await fetch('/api/products/create', {
+        return await fetch('/api/products/create', {
             method: 'POST',
-            body: formData,
+            body: JSON.stringify(data),
         });
-
-        if (!response.ok) {
-            throw new Error('Failed to create product');
-        }
-
-        return await response.json();
     } catch (error) {
         console.error('Error creating product:', error);
         throw error;
