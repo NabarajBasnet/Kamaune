@@ -185,10 +185,10 @@ const ProfileForm = ({ isOpen, onClose, initialData }: ProfileFormProps) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 min-h-screen">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl h-[95vh] overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4 min-h-screen">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl h-[95vh] overflow-y-auto">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                             Edit Profile
@@ -199,7 +199,7 @@ const ProfileForm = ({ isOpen, onClose, initialData }: ProfileFormProps) => {
                     </div>
                     <button
                         onClick={handleCancel}
-                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                        className="p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                     >
                         <X className="w-6 h-6 text-gray-500 dark:text-gray-400" />
                     </button>
@@ -247,7 +247,7 @@ const ProfileForm = ({ isOpen, onClose, initialData }: ProfileFormProps) => {
                 </div>
 
                 {/* Form Content */}
-                <div className="p-6 overflow-y-auto max-h-[60vh]">
+                <div className="p-4">
                     <form onSubmit={handleSubmit(onSubmit)}>
                         {activeTab === "profile" && (
                             <div className="animate-fadeIn">

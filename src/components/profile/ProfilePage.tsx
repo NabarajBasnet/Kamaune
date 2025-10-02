@@ -114,7 +114,7 @@ export function Profile() {
                         </div>
                         <button
                             onClick={() => setIsFormOpen(true)}
-                            className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
+                            className="flex cursor-pointer items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
                         >
                             <Edit className="w-5 h-5" />
                             Edit Profile
