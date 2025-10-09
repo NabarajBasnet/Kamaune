@@ -81,6 +81,7 @@ export default function LoginComponent() {
             clearErrors();
 
             const res = await loginService(data);
+            console.log("Login res: ", res)
             if (res?.data) {
                 setIsSuccess(true);
                 dispatch(

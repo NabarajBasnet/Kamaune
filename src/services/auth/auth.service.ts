@@ -36,3 +36,16 @@ export const logoutService = async () => {
   } catch (e) {
   }
 };
+
+export const getTokensFromCookies = async () => {
+  try {
+    const response = await fetch('/api/auth/tokens', {
+      method: "GET",
+    })
+
+    return await response.json();
+  } catch (error) {
+    console.log("Error: ", error);
+    return error
+  }
+}

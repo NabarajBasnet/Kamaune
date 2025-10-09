@@ -7,6 +7,7 @@ import ReactReduxProvider from "@/components/Providers/Redux/ReduxProvider";
 import SonnerToastProvider from "@/components/Providers/SonnerProvider/SonnerProvider";
 import { CampaignProvider } from "@/contexts/CampaignContext";
 import { MerchantProvider } from "@/contexts/MerchantContext";
+import AuthProvider from "@/components/Providers/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,7 +44,9 @@ export default function RootLayout({
           <SonnerToastProvider>
             <ReactReduxProvider>
               <ReactQueryClientProvider>
-                {children}
+                <AuthProvider>
+                  {children}
+                </AuthProvider>
               </ReactQueryClientProvider>
             </ReactReduxProvider>
           </SonnerToastProvider>

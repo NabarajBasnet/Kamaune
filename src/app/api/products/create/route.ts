@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { PRODUCT_URLS } from "@/lib/urls/urls";
 import { makeAuthenticatedApiRequest } from "@/lib/auth-utils";
 

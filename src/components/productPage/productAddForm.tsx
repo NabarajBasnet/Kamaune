@@ -12,6 +12,7 @@ import { useForm } from "react-hook-form";
 import ProductPhotoManagement from "./productPhotoManagement";
 import { CreateProduct } from "@/services/store/products/product.service";
 import { toast } from "sonner";
+import { useSelector } from "react-redux";
 
 interface ProductModalProps {
     isOpen: boolean;
@@ -60,6 +61,9 @@ export default function ProductAddForm({
     const [heroProduct, setHeroProduct] = useState<boolean>(false);
     const [isCompared, setIsCompared] = useState<boolean>(false);
     const [cardType, setCardType] = useState<boolean>(false);
+    const accessToken = useSelector((state: any) => state.auth.accessToken);
+
+    console.log("Access token: ", accessToken);
 
     const [productImage, setProductImage] = useState<string>("");
     // console.log("Product Image: ", productImage);
