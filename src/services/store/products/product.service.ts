@@ -1,3 +1,4 @@
+import { PRODUCT_URLS } from "@/lib/urls/urls";
 
 export async function GetAllProducts() {
     try {
@@ -14,14 +15,19 @@ export async function GetAllProducts() {
     }
 }
 
-export const CreateProduct = async (data: any) => {
+export const CreateProduct = async (data: any, token: string) => {
     try {
-        return await fetch('/api/products/create', {
+        const response = await fetch(PRODUCT_URLS.CREATE_PRODUCT, {
             method: 'POST',
-            body: JSON.stringify(data),
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(data)
         });
+        return response;
     } catch (error) {
-        console.error('Error creating product:', error);
+        console.error('Network error:', error);
         throw error;
     }
 };

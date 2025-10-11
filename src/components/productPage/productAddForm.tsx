@@ -63,15 +63,10 @@ export default function ProductAddForm({
     const [cardType, setCardType] = useState<boolean>(false);
     const accessToken = useSelector((state: any) => state.auth.accessToken);
 
-    console.log("Access token: ", accessToken);
-
     const [productImage, setProductImage] = useState<string>("");
-    // console.log("Product Image: ", productImage);
 
     const [productGallery, setProductGallery] = useState<Photo[]>([]);
-    // console.log("Product galary: ", productGallery);
     const [imageUrls, setImageUrls] = useState<Photo[]>([]);
-    // console.log("Image URLs: ", imageUrls);
 
     const [isSlugCustomized, setIsSlugCustomized] = useState<boolean>(false);
 
@@ -102,6 +97,19 @@ export default function ProductAddForm({
             reader.onerror = error => reject(error);
         });
     };
+
+    const base64ToBlob = (base64: string): Blob => {
+        const [metadata, data] = base64.split(',');
+        const byteString = atob(data);
+        const mimeString = metadata.match(/:(.*?);/)![1];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+        return new Blob([ab], { type: mimeString });
+    };
+
 
     // Handle main product image selection
     const handleMainImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -262,55 +270,59 @@ export default function ProductAddForm({
 
     const handleOnSubmit = async (data: any) => {
         try {
-            const productData = {
-                slug: data.slug,
-                is_compared: isCompared,
-                name: data.name,
-                category: parseInt(selectedCategory) || null,
-                sub_category: parseInt(selectedSubCategory) || null,
-                merchant: parseInt(selectedMerchant) || null,
-                brand: parseInt(selectedBrand) || null,
-                product_url: data.productUrl,
-                image_url: productImage,
-                product_galary: productGallery ? productGallery : [],
-                image_urls: imageUrls ? imageUrls : [],
-                cashback_url: data.productUrl,
-                card_type: cardType,
-                product_label: data.productDescription,
-                category_price_starting_from: parseFloat(data.categoryPrice) || 0,
-                category_earn_text:
-                    commissionType === "percentage"
-                        ? `${data.commissionValue}%`
-                        : commissionType === "fixed"
-                            ? `₹${data.commissionValue}`
-                            : "",
-                category_detail: data.productDescription,
+            const requestData = {
+                slug: String(data.slug || ''),
+                is_compared: Boolean(isCompared),
+                name: String(data.name || ''),
+                category: String(selectedCategory || ''),
+                sub_category: String(selectedSubCategory || ''),
+                brand: selectedBrand ? String(selectedBrand) : null,
+                product_url: String(data.productUrl || ''),
+                cashback_url: String(data.productUrl || ''),
+                card_type: Boolean(cardType),
+                product_label: String(data.productDescription || ''),
+                category_price_starting_from: Number(data.categoryPrice) || 0,
+                category_earn_text: commissionType === 'percentage'
+                    ? `${data.commissionValue}%`
+                    : commissionType === 'fixed'
+                        ? `₹${data.commissionValue}`
+                        : String(data.commissionValue || ''),
+                category_detail: String(data.productDescription || ''),
                 popularity: 0,
-                product_button_text: "Buy Now",
+                product_button_text: 'Buy Now',
                 product_start_datetime: `${data.productStartDate}T00:00:00.000Z`,
                 product_end_datetime: `${data.productEndDate}T23:59:59.000Z`,
-                price: parseFloat(data.price) || 0,
-                is_hero_product: heroProduct,
-                status: selectedStatus,
-                cashback_type: cashbackType,
-                has_coupon: hasCoupon,
+                price: Number(data.price) || 0,
+                is_hero_product: Boolean(heroProduct),
+                status: String(selectedStatus || ''),
+                cashback_type: String(cashbackType || ''),
+                has_coupon: Boolean(hasCoupon),
+                image_url: String(productImage || ''),
+                product_galary: productGallery
+                    .filter((photo: Photo) => photo && photo.image && photo.alt)
+                    .map((photo: Photo) => ({
+                        alt: String(photo.alt || ''),
+                        is_primary: Boolean(photo.isPrimary),
+                        image: String(photo.image || '')
+                    })),
+                image_urls: []
             };
 
-            console.log("Product data: ", productData);
+            const response = await CreateProduct(requestData, accessToken);
 
-            const response = await CreateProduct(productData);
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.log(errorData);
+                throw new Error(`Validation failed: ${JSON.stringify(errorData.errors)}`);
+            }
 
-            const result = await response.json();
-            console.log("Result: ", result)
             if (response.ok) {
-                toast.success("Product created successfully!");
-                onClose(); // Close the modal on success
-            } else {
-                toast.error(`Error creating product: ${result.message || "Unknown error"}`);
+                toast.success("Product created successfully");
+                window.location.href = '/dashboard/products'
             }
         } catch (error: any) {
-            console.error("Error creating product:", error);
-            toast.error(`Error: ${error.message || "Unknown error"}`);
+            console.error('Error creating product:', error);
+            toast.error(`Error: ${error.message || 'Unknown error'}`);
         }
     };
 
@@ -437,6 +449,18 @@ export default function ProductAddForm({
                                 disabled={isSubCategoriesLoading}
                             />
                         </div>
+
+                        <div>
+                            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">
+                                Brand *
+                            </label>
+                            <SearchableDropdown
+                                options={barndsOptions}
+                                onSelect={handleBrandSelect}
+                                placeholder="Select Brand"
+                                disabled={loadingOptions?.brands}
+                            />
+                        </div>
                     </div>
 
                     <div>
@@ -453,32 +477,6 @@ export default function ProductAddForm({
                         {errors.productDescription && (
                             <span className="text-xs font-semibold text-red-600">{`${errors.productDescription.message}`}</span>
                         )}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div>
-                            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">
-                                Merchant *
-                            </label>
-                            <SearchableDropdown
-                                options={merchantsOptions}
-                                onSelect={handleMerchantSelect}
-                                placeholder="Select Merchant"
-                                disabled={isMerchantsLoading}
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">
-                                Brand *
-                            </label>
-                            <SearchableDropdown
-                                options={barndsOptions}
-                                onSelect={handleBrandSelect}
-                                placeholder="Select Brand"
-                                disabled={loadingOptions?.brands}
-                            />
-                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

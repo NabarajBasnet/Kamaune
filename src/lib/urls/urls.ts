@@ -1,16 +1,16 @@
 const BASE_URL = `https://api.nepcash.com`;
 
 export const AUTH_URLS = {
-  LOG_IN: `${BASE_URL}/auth/login/`,
-  REGISTER: `${BASE_URL}/auth/register/`,
-  REFRESH: `${BASE_URL}/auth/token/refresh/`,
+  LOG_IN: `${BASE_URL}/vendor/auth/login/`,
+  REGISTER: `${BASE_URL}/vendor/auth/registerpublisher/`,
+  REFRESH: `${BASE_URL}/vendor/auth/token/refresh/`,
   LOG_OUT: `${BASE_URL}/auth/logout/`,
 };
 
 export const PRODUCT_URLS = {
-  GET_ALL: `${BASE_URL}/store/products`,
-  CREATE_PRODUCT: `${BASE_URL}/store/products`,
-  DELETE_PRODUCT: `${BASE_URL}/store/products`,
+  GET_ALL: `${BASE_URL}/vendor/store/products/`,
+  CREATE_PRODUCT: `${BASE_URL}/vendor/store/products/`,
+  DELETE_PRODUCT: `${BASE_URL}/vendor/store/products/`,
 }
 
 export const CATEGORIES_URLS = {
@@ -19,11 +19,11 @@ export const CATEGORIES_URLS = {
 }
 
 export const MERCHANTS_URLS = {
-  GET_ALL: `${BASE_URL}/store/merchants`
+  GET_ALL: `${BASE_URL}/store/merchants/`
 }
 
 export const BRANDS_URLS = {
-  GET_ALL: `${BASE_URL}/store/brands`
+  GET_ALL: `${BASE_URL}/store/brands/`
 }
 
 export const OFFER_URLS = {
