@@ -36,7 +36,7 @@ function ProductsGridList({
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [isDeleting, setisDeleting] = useState(false);
     const router = useRouter();
-    const accessToken = useSelector((state) => state.auth.accessToken);
+    const accessToken = useSelector((state: any) => state.auth.accessToken);
 
     const handleProductDelete = async (slug: string) => {
         try {
@@ -95,11 +95,15 @@ function ProductsGridList({
         const isActive = !product.product_end_datetime || new Date(product.product_end_datetime) > new Date();
 
         return (
-            <div onClick={() => router.push(`/dashboard/products/details/${product.slug}`)} className="cursor-pointer rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow">
+            <div className="cursor-pointer rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow">
                 <div className="relative">
                     <div className="h-64 bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                         {getImageUrl() ? (
                             <img
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(`/dashboard/products/details/${product.slug}`);
+                                }}
                                 src={getImageUrl()}
                                 alt={product.name || 'Product image'}
                                 className="h-full w-full object-cover"
@@ -135,7 +139,12 @@ function ProductsGridList({
                     </div>
                 </div>
                 <div className="p-4">
-                    <h3 className="font-semibold mb-2 truncate text-gray-900 dark:text-white">
+                    <h3
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/dashboard/products/details/${product.slug}`);
+                        }}
+                        className="font-semibold mb-2 truncate text-gray-900 dark:text-white">
                         {product.name || 'Unnamed Product'}
                     </h3>
                     <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
@@ -169,7 +178,10 @@ function ProductsGridList({
                         </button>
                         <div className="flex gap-1">
                             <button
-                                onClick={() => router.push(`/dashboard/products/${product.slug}`)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(`/dashboard/products/${product.slug}/`);
+                                }}
                                 className="p-4 cursor-pointer rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors">
                                 <Edit3 className="h-4 w-4" />
                             </button>
@@ -218,11 +230,16 @@ function ProductsGridList({
         const isActive = !product.product_end_datetime || new Date(product.product_end_datetime) > new Date();
 
         return (
-            <div onClick={() => router.push(`/dashboard/products/details/${product.slug}`)} className="cursor-pointer rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm hover:shadow-md transition-shadow">
+            <div className="cursor-pointer rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm hover:shadow-md transition-shadow"
+                onClick={() => router.push(`/dashboard/products/details/${product.slug}`)}>
                 <div className="flex items-center gap-4">
                     <div className="w-20 h-20 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
                         {getImageUrl() ? (
                             <img
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(`/dashboard/products/details/${product.slug}`);
+                                }}
                                 src={getImageUrl()}
                                 alt={product.name || 'Product image'}
                                 className="w-full h-full object-cover rounded-lg"
@@ -245,7 +262,12 @@ function ProductsGridList({
 
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold truncate text-gray-900 dark:text-white">
+                            <h3
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(`/dashboard/products/details/${product.slug}`);
+                                }}
+                                className="font-semibold truncate text-gray-900 dark:text-white">
                                 {product.name || 'Unnamed Product'}
                             </h3>
                             <div className="flex gap-1 flex-shrink-0">
@@ -296,7 +318,10 @@ function ProductsGridList({
                             Copy Link
                         </button>
                         <button
-                            onClick={() => router.push(`/dashboard/products/${product.slug}`)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/dashboard/products/${product.slug}/`);
+                            }}
                             className="p-1 cursor-pointer rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors">
                             <Edit3 className="h-4 w-4" />
                         </button>
