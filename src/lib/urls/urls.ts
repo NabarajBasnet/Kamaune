@@ -10,7 +10,9 @@ export const AUTH_URLS = {
 export const PRODUCT_URLS = {
   GET_ALL: `${BASE_URL}/vendor/store/products/`,
   CREATE_PRODUCT: `${BASE_URL}/vendor/store/products/`,
+  UPDATE_PRODUCT: `${BASE_URL}/vendor/store/products/`,
   DELETE_PRODUCT: `${BASE_URL}/vendor/store/products/`,
+  GET_BY_SLUG: `${BASE_URL}/vendor/store/products/`,
 }
 
 export const CATEGORIES_URLS = {

@@ -16,6 +16,8 @@ import { deleteProduct } from "@/services/store/products/product.service";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Loading from "@/app/loading";
+import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
 
 interface ProductsGridListProps {
     products: Product[];
@@ -32,16 +34,18 @@ function ProductsGridList({
 }: ProductsGridListProps) {
     const queryClient = useQueryClient();
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-    const [isWarningOpen, setIsWarningOpen] = useState(false);
     const [isDeleting, setisDeleting] = useState(false);
+    const router = useRouter();
+    const accessToken = useSelector((state) => state.auth.accessToken);
 
     const handleProductDelete = async (slug: string) => {
         try {
             setisDeleting(true);
-            await deleteProduct(slug);
-            toast.success('Product deleted successfully');
-            queryClient.invalidateQueries({ queryKey: ['products'] });
+            const response = await deleteProduct(slug, accessToken);
+            if (response.ok) {
+                toast.success('Product deleted successfully');
+                queryClient.invalidateQueries({ queryKey: ['products'] });
+            }
         } catch (error) {
             console.error("Failed to delete product:", error);
             toast.error('Failed to delete product');
@@ -91,7 +95,7 @@ function ProductsGridList({
         const isActive = !product.product_end_datetime || new Date(product.product_end_datetime) > new Date();
 
         return (
-            <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow">
+            <div onClick={() => router.push(`/dashboard/products/details/${product.slug}`)} className="cursor-pointer rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow">
                 <div className="relative">
                     <div className="h-64 bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                         {getImageUrl() ? (
@@ -164,21 +168,11 @@ function ProductsGridList({
                             Copy Link
                         </button>
                         <div className="flex gap-1">
-                            <button className="p-4 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors">
+                            <button
+                                onClick={() => router.push(`/dashboard/products/${product.slug}`)}
+                                className="p-4 cursor-pointer rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors">
                                 <Edit3 className="h-4 w-4" />
                             </button>
-
-                            {/* <DeleteDialog
-                                isOpen={isDeleteOpen}
-                                onClose={() => setIsDeleteOpen(false)}
-                                onConfirm={handleArchive}
-                                title="Archive Item"
-                                description="This item will be moved to archive. You can restore it later if needed."
-                                confirmText="Archive"
-                                cancelText="Keep Active"
-                                isDeleting={isDeleting}
-                                variant="warning"
-                            /> */}
 
                             {/* Delete dialog */}
                             <AlertDialog>
@@ -224,7 +218,7 @@ function ProductsGridList({
         const isActive = !product.product_end_datetime || new Date(product.product_end_datetime) > new Date();
 
         return (
-            <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm hover:shadow-md transition-shadow">
+            <div onClick={() => router.push(`/dashboard/products/details/${product.slug}`)} className="cursor-pointer rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-4">
                     <div className="w-20 h-20 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
                         {getImageUrl() ? (
@@ -301,7 +295,9 @@ function ProductsGridList({
                             <Copy className="h-3 w-3" />
                             Copy Link
                         </button>
-                        <button className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors">
+                        <button
+                            onClick={() => router.push(`/dashboard/products/${product.slug}`)}
+                            className="p-1 cursor-pointer rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors">
                             <Edit3 className="h-4 w-4" />
                         </button>
 

@@ -3,7 +3,6 @@
 import ProductActionSection from '@/components/productPage/actionSection'
 import { GetAllProducts } from '@/services/store/products/product.service'
 import { useQuery } from '@tanstack/react-query'
-import React, { useState } from 'react'
 import ProductsGridList from '@/components/productPage/productGridAndList';
 import StatCardSection from '@/components/productPage/statCardSection';
 import ProductFilterSection from '@/components/productPage/productFilterSection';

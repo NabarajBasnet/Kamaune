@@ -13,6 +13,7 @@ import ProductPhotoManagement from "./productPhotoManagement";
 import { CreateProduct } from "@/services/store/products/product.service";
 import { toast } from "sonner";
 import { useSelector } from "react-redux";
+import { useRouter } from "next/navigation";
 
 interface ProductModalProps {
     isOpen: boolean;
@@ -48,6 +49,7 @@ export default function ProductAddForm({
     loadingOptions,
 }: ProductModalProps) {
 
+    const router = useRouter();
     const [selectedCategory, setSelectedCategory] = useState<string>("");
     const [selectedSubCategory, setSelectedSubCategory] = useState<string>("");
     const [selectedMerchant, setSelectedMerchant] = useState<string>("");
@@ -97,19 +99,6 @@ export default function ProductAddForm({
             reader.onerror = error => reject(error);
         });
     };
-
-    const base64ToBlob = (base64: string): Blob => {
-        const [metadata, data] = base64.split(',');
-        const byteString = atob(data);
-        const mimeString = metadata.match(/:(.*?);/)![1];
-        const ab = new ArrayBuffer(byteString.length);
-        const ia = new Uint8Array(ab);
-        for (let i = 0; i < byteString.length; i++) {
-            ia[i] = byteString.charCodeAt(i);
-        }
-        return new Blob([ab], { type: mimeString });
-    };
-
 
     // Handle main product image selection
     const handleMainImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -219,22 +208,6 @@ export default function ProductAddForm({
         setSelectedSubCategory(option.value);
     };
 
-    // Get merchants
-    const { data: merchants, isLoading: isMerchantsLoading } = useQuery({
-        queryKey: ['merchants'],
-        queryFn: () => getAllMerchants()
-    });
-
-    const merchantsOptions = merchants?.data?.results?.map((merchant: any) => ({
-        value: merchant.id.toString(),
-        label: merchant.name,
-    })) ?? [];
-
-    const handleMerchantSelect = (selected: { value: string; label: string } | { value: string; label: string }[]) => {
-        const option = Array.isArray(selected) ? selected[0] : selected;
-        setSelectedMerchant(option.value);
-    };
-
     // Get all brands
     const { data: brands, isLoading: isBrandsLoading } = useQuery({
         queryKey: ['brands'],
@@ -309,16 +282,11 @@ export default function ProductAddForm({
             };
 
             const response = await CreateProduct(requestData, accessToken);
-
             if (!response.ok) {
-                const errorData = await response.json();
-                console.log(errorData);
-                throw new Error(`Validation failed: ${JSON.stringify(errorData.errors)}`);
-            }
-
-            if (response.ok) {
-                toast.success("Product created successfully");
-                window.location.href = '/dashboard/products'
+                toast.error("Failed to create product")
+            } else {
+                toast.success('Product created successfully');
+                router.push('/dashboard/products/')
             }
         } catch (error: any) {
             console.error('Error creating product:', error);

@@ -15,18 +15,20 @@ interface FormValues {
 
 interface ProductPhotoManagementProps {
     onPhotosChange?: (photos: Photo[]) => void;
+    initialPhotos?: Photo[];
 }
 
-const ProductPhotoManagement = ({ onPhotosChange }: ProductPhotoManagementProps) => {
+const ProductPhotoManagement = ({ onPhotosChange, initialPhotos = [] }: ProductPhotoManagementProps) => {
     const {
         register,
         control,
         watch,
         setValue,
-        getValues
+        getValues,
+        reset
     } = useForm<FormValues>({
         defaultValues: {
-            photos: []
+            photos: initialPhotos
         }
     });
 
@@ -135,8 +137,12 @@ const ProductPhotoManagement = ({ onPhotosChange }: ProductPhotoManagementProps)
     }, []);
 
     React.useEffect(() => {
+        // Initialize with initial photos if provided
+        if (initialPhotos && initialPhotos.length > 0) {
+            reset({ photos: initialPhotos });
+        }
         notifyParent();
-    }, []);
+    }, [initialPhotos, reset]);
 
     return (
         <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-6 bg-gray-50 dark:bg-gray-700/50">
