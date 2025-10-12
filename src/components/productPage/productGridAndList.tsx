@@ -198,14 +198,21 @@ function ProductsGridList({
                                     <AlertDialogHeader>
                                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            This action cannot be undone. This will permanently delete your
-                                            account and remove your data from our servers.
+                                            This action cannot be undone. This will permanently delete this product and remove your data from our servers.
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                                        <AlertDialogCancel
+                                            disabled={isDeleting}
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            Cancel
+                                        </AlertDialogCancel>
                                         <AlertDialogAction
-                                            onClick={() => handleProductDelete(product.slug)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleProductDelete(product.slug);
+                                            }}
                                             className="bg-red-600 cursor-pointer hover:bg-red-500 dark:text-white"
                                             disabled={isDeleting}
                                         >
@@ -330,6 +337,7 @@ function ProductsGridList({
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <button
+                                    onClick={(e) => e.stopPropagation()}
                                     className="p-4 rounded cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-colors">
                                     <Trash2 className="h-4 w-4" />
                                 </button>
@@ -338,14 +346,21 @@ function ProductsGridList({
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        This action cannot be undone. This will permanently delete your
-                                        account and remove your data from our servers.
+                                        This action cannot be undone. This will permanently delete this product and remove your data from our servers.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                    <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                                    <AlertDialogCancel
+                                        disabled={isDeleting}
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        Cancel
+                                    </AlertDialogCancel>
                                     <AlertDialogAction
-                                        onClick={() => handleProductDelete(product.slug)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleProductDelete(product.slug);
+                                        }}
                                         className="bg-red-600 cursor-pointer hover:bg-red-500 dark:text-white"
                                         disabled={isDeleting}
                                     >
