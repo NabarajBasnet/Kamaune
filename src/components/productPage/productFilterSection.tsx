@@ -14,17 +14,37 @@ interface ProductsProps {
     error?: string | null;
 }
 
+interface ProductFilterSectionProps {
+    data: ProductsProps[];
+    hasSearchField?: boolean;
+    searchQuery?: string;
+    setSearchQuery?: (query: string) => void;
+    selectedCategory?: string;
+    setSelectedCategory?: (category: string) => void;
+    selectedSubCategory?: string;
+    setSelectedSubCategory?: (subCategory: string) => void;
+    selectedBrand?: string;
+    setSelectedBrand?: (brand: string) => void;
+    selectedStatus?: string;
+    setSelectedStatus?: (status: string) => void;
+    selectedMerchant?: string;
+    setSelectedMerchant?: (merchant: string) => void;
+}
+
 const ProductFilterSection = ({
     data,
-    hasSearchField
-}: { data: ProductsProps[]; hasSearchField?: boolean }) => {
-
-    const [selectedCategory, setSelectedCategory] = useState<string>("");
-    const [selectedSubCategory, setSelectedSubCategory] = useState<string>("");
-    const [selectedMerchant, setSelectedMerchant] = useState<string>("");
-    const [selectedBrand, setSelectedBrand] = useState<string>("");
-    const [selectedStatus, setSelectedStatus] = useState<string>("");
-    const [searchQuery, setSearchQuery] = useState<string>("");
+    hasSearchField,
+    searchQuery,
+    setSearchQuery,
+    selectedCategory = "",
+    setSelectedCategory,
+    selectedSubCategory = "",
+    setSelectedSubCategory,
+    selectedBrand = "",
+    setSelectedBrand,
+    selectedStatus = "",
+    setSelectedStatus,
+}: ProductFilterSectionProps) => {
 
     // Handle mounting state
     const [mount, setMount] = useState(false);
@@ -45,8 +65,11 @@ const ProductFilterSection = ({
             label: cat.category_name,
         })) ?? [];
 
-    const handleCategorySelect = (selected: { value: string; label: string }) => {
-        setSelectedCategory(selected.value);
+    const handleCategorySelect = (selected: { value: string; label: string } | { value: string; label: string }[]) => {
+        if (Array.isArray(selected)) {
+            return;
+        }
+        setSelectedCategory?.(selected.value);
     };
 
     // Get sub categories
@@ -60,24 +83,11 @@ const ProductFilterSection = ({
         label: cat.sub_category_name,
     })) ?? [];
 
-    const handleSubCategorySelect = (selected: { value: string; label: string }) => {
-        setSelectedSubCategory(selected.value);
-    };
-
-    // Get merchants
-    const { data: merchants, isLoading: isMerchantsLoading } = useQuery({
-        queryKey: ['merchants'],
-        queryFn: () => getAllMerchants()
-    });
-
-
-    const merchantsOptions = merchants?.data?.results?.map((merchant: any) => ({
-        value: merchant.id.toString(),
-        label: merchant.name,
-    })) ?? [];
-
-    const handleMerchantSelect = (selected: { value: string; label: string }) => {
-        setSelectedMerchant(selected.value);
+    const handleSubCategorySelect = (selected: { value: string; label: string } | { value: string; label: string }[]) => {
+        if (Array.isArray(selected)) {
+            return;
+        }
+        setSelectedSubCategory?.(selected.value);
     };
 
     // Get all brands
@@ -91,8 +101,11 @@ const ProductFilterSection = ({
         label: brand.name,
     })) ?? [];
 
-    const handleBrandSelect = (selected: { value: string; label: string }) => {
-        setSelectedBrand(selected.value);
+    const handleBrandSelect = (selected: { value: string; label: string } | { value: string; label: string }[]) => {
+        if (Array.isArray(selected)) {
+            return;
+        }
+        setSelectedBrand?.(selected.value);
     };
 
     // Status options
@@ -106,19 +119,23 @@ const ProductFilterSection = ({
         label: stat.name,
     })) ?? [];
 
-    const handleStatusSelect = (selected: { value: string; label: string }) => {
-        setSelectedStatus(selected.value);
+    const handleStatusSelect = (selected: { value: string; label: string } | { value: string; label: string }[]) => {
+        if (Array.isArray(selected)) {
+            return;
+        }
+        setSelectedStatus?.(selected.value);
     };
 
     return (
         <div className="w-full space-y-4">
-            <div className="grid grid-cols-1 md:gri-cols-4 gap-4 lg:grid-cols-5">
+            <div className="grid grid-cols-1 md:gri-cols-4 gap-4 lg:grid-cols-4">
                 {/* Categories selector */}
                 <SearchableDropdown
                     options={categoryOptions}
                     onSelect={handleCategorySelect}
                     placeholder={isLoading ? "Loading..." : "All Categories"}
                     className="w-full"
+                    selected={selectedCategory}
                 />
 
                 {/* Sub categories selector */}
@@ -127,14 +144,7 @@ const ProductFilterSection = ({
                     onSelect={handleSubCategorySelect}
                     placeholder={isLoading ? "Loading..." : "All Sub Categories"}
                     className="w-full"
-                />
-
-                {/* Merchant selector */}
-                <SearchableDropdown
-                    options={merchantsOptions}
-                    onSelect={handleMerchantSelect}
-                    placeholder={isLoading ? "Loading..." : "All Merchants"}
-                    className="w-full"
+                    selected={selectedSubCategory}
                 />
 
                 {/* Brand selector */}
@@ -143,6 +153,7 @@ const ProductFilterSection = ({
                     onSelect={handleBrandSelect}
                     placeholder={isLoading ? "Loading..." : "All Brands"}
                     className="w-full"
+                    selected={selectedBrand}
                 />
 
                 {/* Status selector */}
@@ -151,11 +162,15 @@ const ProductFilterSection = ({
                     onSelect={handleStatusSelect}
                     placeholder={isLoading ? "Loading..." : "All Status"}
                     className="w-full"
+                    selected={selectedStatus}
                 />
             </div>
 
             {hasSearchField && (
-                <SearchField onSearch={(q) => console.log("Search:", q)} />
+                <SearchField
+                    value={searchQuery}
+                    onSearch={setSearchQuery}
+                />
             )}
         </div>
     );

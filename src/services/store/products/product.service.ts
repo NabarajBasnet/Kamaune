@@ -1,8 +1,31 @@
 import { PRODUCT_URLS } from "@/lib/urls/urls";
 
-export async function GetAllProducts() {
+export async function GetAllProducts(token: string, filters: any) {
+
+    const queryParams = new URLSearchParams();
+
+    if (filters.search) queryParams.append('search', filters.search);
+    if (filters.category) queryParams.append('category', filters.category);
+    if (filters.subCategory) queryParams.append('sub_category', filters.subCategory);
+    if (filters.brand) queryParams.append('brand', filters.brand);
+    if (filters.status) queryParams.append('status', filters.status);
+    if (filters.merchant) queryParams.append('merchant', filters.merchant);
+
+    const url = queryParams.toString()
+        ? `${PRODUCT_URLS.GET_ALL}?${queryParams.toString()}`
+        : PRODUCT_URLS.GET_ALL;
+
+    console.log('URL: ', url)
+
     try {
-        const response = await fetch('/api/products/all');
+        const response = await fetch(url, {
+            method: "GET",
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
         if (!response.ok) {
             return new Error("Internal server error");
         }

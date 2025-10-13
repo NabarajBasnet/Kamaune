@@ -9,7 +9,7 @@ export async function generateMetadata() {
 
 const Products = () => {
     return (
-        <div className="">
+        <div>
             <MainProductPage />
         </div>
     )

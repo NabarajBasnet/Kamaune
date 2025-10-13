@@ -1,14 +1,15 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Search, X } from "lucide-react";
 import { Input } from "../ui/input";
 
 interface SearchFieldProps {
     placeholder?: string;
     onSearch?: (query: string) => void;
+    value?: string;
 }
 
-const SearchField: React.FC<SearchFieldProps> = ({ placeholder = "Search...", onSearch }) => {
-    const [query, setQuery] = useState("");
+const SearchField: React.FC<SearchFieldProps> = ({ placeholder = "Search...", onSearch, value }) => {
+    const [query, setQuery] = useState(value || "");
 
     const handleClear = () => {
         setQuery("");
@@ -20,6 +21,13 @@ const SearchField: React.FC<SearchFieldProps> = ({ placeholder = "Search...", on
         onSearch?.(e.target.value);
     };
 
+    // Update internal state when value prop changes
+    React.useEffect(() => {
+        if (value !== undefined) {
+            setQuery(value);
+        }
+    }, [value]);
+
     return (
         <div className="relative w-full">
             {/* Left icon */}
@@ -30,7 +38,7 @@ const SearchField: React.FC<SearchFieldProps> = ({ placeholder = "Search...", on
             {/* Input field */}
             <Input
                 type="text"
-                value={query}
+                value={value !== undefined ? value : query}
                 onChange={handleChange}
                 placeholder={placeholder}
                 className="w-full pl-10 pr-10 py-5.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -50,3 +58,4 @@ const SearchField: React.FC<SearchFieldProps> = ({ placeholder = "Search...", on
 };
 
 export default SearchField;
+
